@@ -40,8 +40,7 @@ def norm(A, B):
     Returns:
       s - the L2 norm of A+B.
     """
-    #Your code here
-    raise NotImplementedError
+    return np.linalg.norm(A + B)
 
 
 def neural_network(inputs, weights):
@@ -73,6 +72,15 @@ def vector_function(x, y):
     raise NotImplementedError
 
 if __name__ == "__main__":
-    print(operations(2,2))
+    print("--- Testando a função norm(A, B) com uma terna pitagórica 3D ---")
+    # Vetores coluna de tamanho 3 x 1 onde a norma da soma é sqrt(3^2 + 4^2 + 12^2) = sqrt(169) = 13
+    A_col = np.array([[3.0], [4.0], [0.0]])
+    B_col = np.array([[0.0], [0.0], [12.0]])
+    resultado_norm = norm(A_col, B_col)
+
+    print("Vetor Coluna A:\n", A_col)
+    print("Vetor Coluna B:\n", B_col)
+    print("Vetor Soma (A + B):\n", A_col + B_col)
+    print(f"Norma L2 da soma (Esperado: 13.0): {resultado_norm}")
 
 
