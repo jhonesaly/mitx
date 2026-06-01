@@ -60,8 +60,10 @@ def scalar_function(x, y):
     """
     Returns the f(x,y) defined in the problem statement.
     """
-    #Your code here
-    raise NotImplementedError
+    if x <= y:
+        return x * y
+    else:
+        return x / y
 
 def vector_function(x, y):
     """
@@ -71,14 +73,13 @@ def vector_function(x, y):
     raise NotImplementedError
 
 if __name__ == "__main__":
-    print("--- Testando a função neural_network(inputs, weights) ---")
-    inputs_test = np.array([[0.5], [0.8]])
-    weights_test = np.array([[0.2], [0.3]])
-    out_nn = neural_network(inputs_test, weights_test)
+    print("--- Testando a função scalar_function(x, y) ---")
+    # Caso 1: x <= y (3 <= 5 -> deve retornar 15)
+    r1 = scalar_function(3, 5)
+    print(f"scalar_function(3, 5) -> Resultado: {r1} (Esperado: 15)")
 
-    print("Inputs:\n", inputs_test)
-    print("Weights:\n", weights_test)
-    print("Output (1x1 array):\n", out_nn)
-    print("Output shape:", out_nn.shape)
+    # Caso 2: x > y (6 > 2 -> deve retornar 3.0)
+    r2 = scalar_function(6, 2)
+    print(f"scalar_function(6, 2) -> Resultado: {r2} (Esperado: 3.0)")
 
 
