@@ -54,8 +54,7 @@ def neural_network(inputs, weights):
      Returns (in this order):
        out - a 1 x 1 NumPy array, representing the output of the neural network
     """
-    #Your code here
-    raise NotImplementedError
+    return np.tanh(weights.T @ inputs)
 
 def scalar_function(x, y):
     """
@@ -72,15 +71,14 @@ def vector_function(x, y):
     raise NotImplementedError
 
 if __name__ == "__main__":
-    print("--- Testando a função norm(A, B) com uma terna pitagórica 3D ---")
-    # Vetores coluna de tamanho 3 x 1 onde a norma da soma é sqrt(3^2 + 4^2 + 12^2) = sqrt(169) = 13
-    A_col = np.array([[3.0], [4.0], [0.0]])
-    B_col = np.array([[0.0], [0.0], [12.0]])
-    resultado_norm = norm(A_col, B_col)
+    print("--- Testando a função neural_network(inputs, weights) ---")
+    inputs_test = np.array([[0.5], [0.8]])
+    weights_test = np.array([[0.2], [0.3]])
+    out_nn = neural_network(inputs_test, weights_test)
 
-    print("Vetor Coluna A:\n", A_col)
-    print("Vetor Coluna B:\n", B_col)
-    print("Vetor Soma (A + B):\n", A_col + B_col)
-    print(f"Norma L2 da soma (Esperado: 13.0): {resultado_norm}")
+    print("Inputs:\n", inputs_test)
+    print("Weights:\n", weights_test)
+    print("Output (1x1 array):\n", out_nn)
+    print("Output shape:", out_nn.shape)
 
 
