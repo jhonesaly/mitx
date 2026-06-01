@@ -69,17 +69,18 @@ def vector_function(x, y):
     """
     Make sure vector_function can deal with vector input x,y 
     """
-    #Your code here
-    raise NotImplementedError
+    v_func = np.vectorize(scalar_function)
+    return v_func(x, y)
 
 if __name__ == "__main__":
-    print("--- Testando a função scalar_function(x, y) ---")
-    # Caso 1: x <= y (3 <= 5 -> deve retornar 15)
-    r1 = scalar_function(3, 5)
-    print(f"scalar_function(3, 5) -> Resultado: {r1} (Esperado: 15)")
+    print("--- Testando a função vector_function(x, y) ---")
+    x_vec = np.array([3, 6, 2])
+    y_vec = np.array([5, 2, 4])
+    resultado = vector_function(x_vec, y_vec)
 
-    # Caso 2: x > y (6 > 2 -> deve retornar 3.0)
-    r2 = scalar_function(6, 2)
-    print(f"scalar_function(6, 2) -> Resultado: {r2} (Esperado: 3.0)")
+    print("Vetor X:", x_vec)
+    print("Vetor Y:", y_vec)
+    print("Resultado da aplicação elemento a elemento:", resultado)
+    print("Esperado: [15  3  8] (pois 3*5=15, 6/2=3, 2*4=8)")
 
 
