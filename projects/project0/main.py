@@ -23,8 +23,10 @@ def operations(h, w):
       B - a randomly-generated h x w Numpy array.
       s - the sum of A and B.
     """
-    #Your code here
-    raise NotImplementedError
+    A = np.random.rand(h, w)
+    B = np.random.rand(h, w)
+    s = A + B
+    return A, B, s
 
 
 def norm(A, B):
@@ -71,6 +73,6 @@ def vector_function(x, y):
     raise NotImplementedError
 
 if __name__ == "__main__":
-    print(randomization(5))
+    print(operations(2,2))
 
 
