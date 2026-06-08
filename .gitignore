@@ -152,6 +152,7 @@ cython_debug/
 # OS metadata
 .DS_Store
 Thumbs.db
+._*
 
 # Editors
 .vscode/
