@@ -341,3 +341,79 @@ def accuracy(preds, targets):
     returns the fraction of predictions that are correct.
     """
     return (preds == targets).mean()
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    
+    print("Gerando visualizações para hinge_loss_single e hinge_loss_full...")
+    
+    # ─── Exemplo 1: Visualização da Perda Hinge vs Margem Funcional ───────────
+    margins = np.linspace(-2.0, 3.0, 100)
+    # Hinge loss para cada margem: max(0, 1 - m)
+    losses = np.maximum(0.0, 1.0 - margins)
+    
+    plt.figure(figsize=(12, 5.5))
+    
+    # Subplot 1: Função de Perda Hinge
+    plt.subplot(1, 2, 1)
+    plt.plot(margins, losses, label="Hinge Loss", color="red", linewidth=2.5)
+    plt.axvline(x=1.0, color="gray", linestyle="--", label="Margem de Segurança (m=1)")
+    plt.axvline(x=0.0, color="black", linestyle="-", label="Fronteira de Decisão (m=0)")
+    plt.title("Hinge Loss vs Margem Funcional")
+    plt.xlabel("Margem Funcional (y * (θ·x + θ₀))")
+    plt.ylabel("Perda Hinge (L)")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    # ─── Exemplo 2: Perda Hinge Média em um Dataset Toy 2D ───────────────────
+    # Criando 4 pontos em 2D
+    # X1 = [1, 2] (y = 1) -> Classificado correto, fora da margem
+    # X2 = [1, 0.5] (y = 1) -> Classificado correto, mas dentro da margem
+    # X3 = [-1, -1] (y = -1) -> Classificado correto, fora da margem
+    # X4 = [0.5, -0.5] (y = -1) -> Classificado incorreto (do lado positivo)
+    toy_features = np.array([
+        [1.0, 2.0],
+        [1.0, 0.5],
+        [-1.0, -1.0],
+        [0.5, -0.5]
+    ])
+    toy_labels = np.array([1, 1, -1, -1])
+    
+    # Classificador: θ = [1, 1], θ_0 = 0
+    theta = np.array([1.0, 1.0])
+    theta_0 = 0.0
+    
+    # Computando perdas individuais e margens usando nossas funções
+    margins_toy = functional_margin(toy_features, toy_labels, theta, theta_0)
+    losses_toy = np.maximum(0.0, 1.0 - margins_toy)
+    avg_loss = hinge_loss_full(toy_features, toy_labels, theta, theta_0)
+    
+    # Subplot 2: Dataset e Fronteira
+    plt.subplot(1, 2, 2)
+    # Plota a fronteira de decisão x2 = -x1 (já que θ1*x1 + θ2*x2 = 0 => x2 = -x1)
+    x1_vals = np.linspace(-2.0, 2.0, 100)
+    x2_vals = -x1_vals
+    plt.plot(x1_vals, x2_vals, color="black", label="Fronteira (θ·x = 0)")
+    
+    # Plota as linhas de margem de segurança (θ·x = +1 e θ·x = -1)
+    plt.plot(x1_vals, x2_vals + 1/theta[1], color="gray", linestyle=":", label="Margem de Segurança")
+    plt.plot(x1_vals, x2_vals - 1/theta[1], color="gray", linestyle=":")
+    
+    # Plota os pontos
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        plt.text(toy_features[i, 0] + 0.1, toy_features[i, 1], f"Perda: {losses_toy[i]:.2f}", fontsize=10, weight='bold')
+        
+    plt.xlim(-2.0, 2.0)
+    plt.ylim(-2.0, 3.0)
+    plt.title(f"Hinge Loss Média no Dataset: {avg_loss:.3f}")
+    plt.xlabel("Característica 1 (x1)")
+    plt.ylabel("Característica 2 (x2)")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig("hinge_loss_visualization.png")
+    print("Visualização salva em 'hinge_loss_visualization.png' com sucesso!")
