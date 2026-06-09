@@ -92,60 +92,28 @@ def pegasos_single_step_update(
         eta,
         theta,
         theta_0):
-    """
-    Updates the classification parameters `theta` and `theta_0` via a single
-    step of the Pegasos algorithm.  Returns new parameters rather than
-    modifying in-place.
-
-    Args:
-        `feature_vector` - A numpy array describing a single data point.
-        `label` - The correct classification of the feature vector.
-        `L` - The lamba value being used to update the parameters.
-        `eta` - Learning rate to update parameters.
-        `theta` - The old theta being used by the Pegasos
-            algorithm before this update.
-        `theta_0` - The old theta_0 being used by the
-            Pegasos algorithm before this update.
-    Returns:
-        a tuple where the first element is a numpy array with the value of
-        theta after the old update has completed and the second element is a
-        real valued number with the value of theta_0 after the old updated has
-        completed.
-    """
-    # Your code here
-    raise NotImplementedError
+    margin = functional_margin(feature_vector, label, theta, theta_0)
+    if margin <= 1.0 + 1e-9:
+        theta = (1.0 - eta * L) * theta + eta * label * feature_vector
+        theta_0 = theta_0 + eta * label
+    else:
+        theta = (1.0 - eta * L) * theta
+    return theta, theta_0
 
 
 
 def pegasos(feature_matrix, labels, T, L):
-    """
-    Runs the Pegasos algorithm on a given set of data. Runs T iterations
-    through the data set, there is no need to worry about stopping early.  For
-    each update, set learning rate = 1/sqrt(t), where t is a counter for the
-    number of updates performed so far (between 1 and nT inclusive).
-
-    NOTE: Please use the previously implemented functions when applicable.  Do
-    not copy paste code from previous parts.
-
-    Args:
-        `feature_matrix` - A numpy matrix describing the given data. Each row
-            represents a single data point.
-        `labels` - A numpy array where the kth element of the array is the
-            correct classification of the kth row of the feature matrix.
-        `T` - An integer indicating how many times the algorithm
-            should iterate through the feature matrix.
-        `L` - The lamba value being used to update the Pegasos
-            algorithm parameters.
-
-    Returns:
-        a tuple where the first element is a numpy array with the value of the
-        theta, the linear classification parameter, found after T iterations
-        through the feature matrix and the second element is a real number with
-        the value of the theta_0, the offset classification parameter, found
-        after T iterations through the feature matrix.
-    """
-    # Your code here
-    raise NotImplementedError
+    nsamples, nfeatures = feature_matrix.shape
+    theta, theta_0 = initialize_parameters(nfeatures)
+    t_counter = 0
+    for t in range(T):
+        for i in get_order(nsamples):
+            t_counter += 1
+            eta = 1.0 / np.sqrt(t_counter)
+            theta, theta_0 = pegasos_single_step_update(
+                feature_matrix[i], labels[i], L, eta, theta, theta_0
+            )
+    return theta, theta_0
 
 
 
@@ -327,8 +295,7 @@ if __name__ == "__main__":
     # Funções de treinamento sequenciais e determinísticas para os plots
     def run_perceptron_sequential(feature_matrix, labels, T):
         nsamples, nfeatures = feature_matrix.shape
-        theta = np.zeros(nfeatures)
-        theta_0 = 0.0
+        theta, theta_0 = initialize_parameters(nfeatures)
         for t in range(T):
             for i in range(nsamples):
                 theta, theta_0 = perceptron_single_step_update(
@@ -338,10 +305,8 @@ if __name__ == "__main__":
 
     def run_average_perceptron_sequential(feature_matrix, labels, T):
         nsamples, nfeatures = feature_matrix.shape
-        theta = np.zeros(nfeatures)
-        theta_0 = 0.0
-        theta_sum = np.zeros(nfeatures)
-        theta_0_sum = 0.0
+        theta, theta_0 = initialize_parameters(nfeatures)
+        theta_sum, theta_0_sum = initialize_parameters(nfeatures)
         counter = 0
         for t in range(T):
             for i in range(nsamples):
@@ -352,6 +317,19 @@ if __name__ == "__main__":
                 theta_0_sum += theta_0
                 counter += 1
         return theta_sum / counter, theta_0_sum / counter
+
+    def run_pegasos_sequential(feature_matrix, labels, T, L):
+        nsamples, nfeatures = feature_matrix.shape
+        theta, theta_0 = initialize_parameters(nfeatures)
+        t_counter = 0
+        for t in range(T):
+            for i in range(nsamples):
+                t_counter += 1
+                eta = 1.0 / np.sqrt(t_counter)
+                theta, theta_0 = pegasos_single_step_update(
+                    feature_matrix[i], labels[i], L, eta, theta, theta_0
+                )
+        return theta, theta_0
     
     # ─── Visualização 1: Hinge Loss ──────────────────────────────────────────
     print("Gerando visualizações para hinge_loss_single e hinge_loss_full...")
@@ -639,3 +617,191 @@ if __name__ == "__main__":
     plt.savefig(os.path.join(dir_path, "average_perceptron_visualization.png"))
     plt.close()
     print("Visualização do Average Perceptron salva em 'average_perceptron_visualization.png' com sucesso!")
+
+    # ─── Visualização 5: Pegasos (Impacto da Regularização L) ───────────────
+    print("Gerando visualizações para o Pegasos...")
+    
+    # Execuções do Pegasos com L=0.01 (fraca) e L=0.5 (forte)
+    theta_peg_weak, theta_0_peg_weak = run_pegasos_sequential(toy_features, toy_labels, 5, 0.01)
+    theta_peg_strong, theta_0_peg_strong = run_pegasos_sequential(toy_features, toy_labels, 5, 0.5)
+    
+    # Reta de referência do Perceptron Padrão e Average Perceptron
+    theta_std, theta_0_std = run_perceptron_sequential(toy_features, toy_labels, 5)
+    theta_avg, theta_0_avg = run_average_perceptron_sequential(toy_features, toy_labels, 5)
+    
+    plt.figure(figsize=(12, 5.5))
+    x1_line = np.linspace(-3.0, 3.0, 100)
+    
+    # Subplot 1: Regularização Fraca (L = 0.01)
+    plt.subplot(1, 2, 1)
+    plt.plot(x1_line, - (theta_peg_weak[0] * x1_line + theta_0_peg_weak) / theta_peg_weak[1],
+             color="blue", linewidth=2.5, label="Pegasos (L=0.01)")
+    plt.plot(x1_line, - (theta_std[0] * x1_line + theta_0_std) / theta_std[1],
+             color="black", linestyle=":", linewidth=2, label="Perceptron Padrão")
+    plt.plot(x1_line, - (theta_avg[0] * x1_line + theta_0_avg) / theta_avg[1],
+             color="purple", linestyle="--", linewidth=2.0, label="Average Perceptron")
+             
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Pegasos: Regularização Fraca (L = 0.01)\nReta é puxada pelos outliers")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    # Subplot 2: Regularização Forte (L = 0.5)
+    plt.subplot(1, 2, 2)
+    plt.plot(x1_line, - (theta_peg_strong[0] * x1_line + theta_0_peg_strong) / theta_peg_strong[1],
+             color="blue", linewidth=2.5, label="Pegasos (L=0.5)")
+    plt.plot(x1_line, - (theta_std[0] * x1_line + theta_0_std) / theta_std[1],
+             color="black", linestyle=":", linewidth=2, label="Perceptron Padrão")
+    plt.plot(x1_line, - (theta_avg[0] * x1_line + theta_0_avg) / theta_avg[1],
+             color="purple", linestyle="--", linewidth=2.0, label="Average Perceptron")
+             
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Pegasos: Regularização Forte (L = 0.5)\nIgnora outliers e foca na Margem Máxima")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(dir_path, "pegasos_visualization.png"))
+    plt.close()
+    print("Visualização do Pegasos salva em 'pegasos_visualization.png' com sucesso!")
+
+    # ─── Visualização 6: Otimização do Pegasos (Concavidade e Descida do Custo) 
+    print("Gerando visualizações para a concavidade e otimização do Pegasos...")
+    
+    L_val = 0.5
+    theta_path = np.zeros(2)
+    theta_0_path = 0.0
+    t_counter = 0
+    
+    peg_theta_history = [theta_path.copy()]
+    peg_cost_history = []
+    
+    def compute_svm_cost(features, labels, w, w0, L):
+        reg = 0.5 * L * np.sum(w ** 2)
+        h_loss = hinge_loss_full(features, labels, w, w0)
+        return reg + h_loss
+        
+    initial_cost = compute_svm_cost(toy_features, toy_labels, theta_path, theta_0_path, L_val)
+    peg_cost_history.append(initial_cost)
+    
+    for t in range(5):
+        for i in range(len(toy_labels)):
+            t_counter += 1
+            eta = 1.0 / np.sqrt(t_counter)
+            theta_path, theta_0_path = pegasos_single_step_update(
+                toy_features[i], toy_labels[i], L_val, eta, theta_path, theta_0_path
+            )
+            peg_theta_history.append(theta_path.copy())
+            peg_cost_history.append(compute_svm_cost(toy_features, toy_labels, theta_path, theta_0_path, L_val))
+            
+    peg_theta_history = np.array(peg_theta_history)
+    peg_cost_history = np.array(peg_cost_history)
+    
+    plt.figure(figsize=(12, 5.5))
+    
+    # Subplot 1: Curva de Otimização (Queda do Custo no Tempo)
+    plt.subplot(1, 2, 1)
+    plt.plot(range(len(peg_cost_history)), peg_cost_history, color="blue", linewidth=2.5, marker="o", markersize=4, label="Custo Objetivo J(θ, θ₀)")
+    plt.title("Otimização: Queda do Custo Objetivo J(θ, θ₀)\nao longo das iterações")
+    plt.xlabel("Número de Updates (t)")
+    plt.ylabel("Custo Objetivo J(θ, θ₀)")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    # Subplot 2: Superfície de Custo (Contorno) e Trajetória
+    plt.subplot(1, 2, 2)
+    
+    theta_opt = peg_theta_history[-1]
+    theta1_grid = np.linspace(theta_opt[0] - 2.0, theta_opt[0] + 2.0, 100)
+    theta2_grid = np.linspace(theta_opt[1] - 2.0, theta_opt[1] + 2.0, 100)
+    
+    T1, T2 = np.meshgrid(theta1_grid, theta2_grid)
+    Z = np.zeros_like(T1)
+    
+    opt_theta_0 = theta_0_path
+    
+    for row in range(len(theta2_grid)):
+        for col in range(len(theta1_grid)):
+            w_grid = np.array([T1[row, col], T2[row, col]])
+            Z[row, col] = compute_svm_cost(toy_features, toy_labels, w_grid, opt_theta_0, L_val)
+            
+    contour = plt.contourf(T1, T2, Z, levels=25, cmap="viridis")
+    plt.colorbar(contour, label="Custo Objetivo J")
+    
+    plt.plot(peg_theta_history[:, 0], peg_theta_history[:, 1], color="red", linestyle="-", marker="x", markersize=6, label="Trajetória de θ", linewidth=1.5)
+    
+    plt.scatter(0.0, 0.0, color="yellow", marker="*", s=200, edgecolors="black", zorder=6, label="Início: θ=[0,0]")
+    plt.scatter(theta_opt[0], theta_opt[1], color="red", marker="P", s=150, edgecolors="white", zorder=6, label=f"Mínimo: θ*=[{theta_opt[0]:.2f}, {theta_opt[1]:.2f}]")
+    
+    plt.title("Concavidade: Contorno da Função de Custo Convexa\ncom a trajetória de descida do Pegasos")
+    plt.xlabel("Parâmetro θ₁")
+    plt.ylabel("Parâmetro θ₂")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(dir_path, "pegasos_objective_optimization.png"))
+    plt.close()
+    print("Visualização da otimização do Pegasos salva em 'pegasos_objective_optimization.png' com sucesso!")
+
+    # ─── Visualização 7: Impacto do Hiperparâmetro L ─────────────────────────
+    print("Gerando visualizações para o impacto do hiperparâmetro L...")
+    
+    L_values = np.logspace(-4, 1, 100)
+    theta_norms = []
+    hinge_losses = []
+    total_costs = []
+    
+    for L_val in L_values:
+        w, w0 = run_pegasos_sequential(toy_features, toy_labels, T=5, L=L_val)
+        w_norm = np.linalg.norm(w)
+        h_loss = hinge_loss_full(toy_features, toy_labels, w, w0)
+        obj_cost = 0.5 * L_val * (w_norm ** 2) + h_loss
+        
+        theta_norms.append(w_norm)
+        hinge_losses.append(h_loss)
+        total_costs.append(obj_cost)
+        
+    plt.figure(figsize=(12, 5.5))
+    
+    # Subplot 1: Norma L2 de theta vs L
+    plt.subplot(1, 2, 1)
+    plt.plot(L_values, theta_norms, color="teal", linewidth=2.5, label="Norma L2 ||theta||")
+    plt.xscale("log")
+    plt.title("Impacto de L na Norma de theta")
+    plt.xlabel("Parametro de Regularizacao L (Escala Log)")
+    plt.ylabel("Norma L2 ||theta||")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    # Subplot 2: Perda Hinge e Custo Total vs L
+    plt.subplot(1, 2, 2)
+    plt.plot(L_values, hinge_losses, color="crimson", linewidth=2.5, label="Perda Hinge Media")
+    plt.plot(L_values, total_costs, color="darkblue", linestyle="--", linewidth=2.0, label="Custo Objetivo Total")
+    plt.xscale("log")
+    plt.title("Impacto de L nas Perdas e Custo")
+    plt.xlabel("Parametro de Regularizacao L (Escala Log)")
+    plt.ylabel("Valor da Perda / Custo")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(dir_path, "pegasos_L_impact_visualization.png"))
+    plt.close()
+    print("Visualização do impacto do L salva em 'pegasos_L_impact_visualization.png' com sucesso!")
