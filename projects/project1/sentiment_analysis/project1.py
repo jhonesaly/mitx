@@ -45,57 +45,24 @@ def perceptron_single_step_update(
         label,
         current_theta,
         current_theta_0):
-    """
-    Updates the classification parameters `theta` and `theta_0` via a single
-    step of the perceptron algorithm.  Returns new parameters rather than
-    modifying in-place.
-
-    Args:
-        feature_vector - A numpy array describing a single data point.
-        label - The correct classification of the feature vector.
-        current_theta - The current theta being used by the perceptron
-            algorithm before this update.
-        current_theta_0 - The current theta_0 being used by the perceptron
-            algorithm before this update.
-    Returns a tuple containing two values:
-        the updated feature-coefficient parameter `theta` as a numpy array
-        the updated offset parameter `theta_0` as a floating point number
-    """
-    # Your code here
-    raise NotImplementedError
+    margin = functional_margin(feature_vector, label, current_theta, current_theta_0)
+    if margin <= 1e-9:
+        return current_theta + label * feature_vector, current_theta_0 + label
+    else:
+        return current_theta, current_theta_0
 
 
 
 def perceptron(feature_matrix, labels, T):
-    """
-    Runs the full perceptron algorithm on a given set of data. Runs T
-    iterations through the data set: we do not stop early.
-
-    NOTE: Please use the previously implemented functions when applicable.
-    Do not copy paste code from previous parts.
-
-    Args:
-        `feature_matrix` - numpy matrix describing the given data. Each row
-            represents a single data point.
-        `labels` - numpy array where the kth element of the array is the
-            correct classification of the kth row of the feature matrix.
-        `T` - integer indicating how many times the perceptron algorithm
-            should iterate through the feature matrix.
-
-    Returns a tuple containing two values:
-        the feature-coefficient parameter `theta` as a numpy array
-            (found after T iterations through the feature matrix)
-        the offset parameter `theta_0` as a floating point number
-            (found also after T iterations through the feature matrix).
-    """
-    # Your code here
-    raise NotImplementedError
+    nsamples, nfeatures = feature_matrix.shape
+    theta = np.zeros(nfeatures)
+    theta_0 = 0.0
     for t in range(T):
         for i in get_order(nsamples):
-            # Your code here
-            raise NotImplementedError
-    # Your code here
-    raise NotImplementedError
+            theta, theta_0 = perceptron_single_step_update(
+                feature_matrix[i], labels[i], theta, theta_0
+            )
+    return theta, theta_0
 
 
 
@@ -344,17 +311,30 @@ def accuracy(preds, targets):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    import os
     
+    # Determina o diretório deste script para salvar as imagens na pasta correta
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    
+    # Novo dataset toy de 4 pontos que convém em exatamente 3 updates partindo do zero
+    toy_features = np.array([
+        [1.0, 2.0],
+        [2.0, 1.0],
+        [0.0, 0.0],
+        [-1.0, 0.5]
+    ])
+    toy_labels = np.array([1, 1, -1, -1])
+    
+    # ─── Visualização 1: Hinge Loss ──────────────────────────────────────────
     print("Gerando visualizações para hinge_loss_single e hinge_loss_full...")
     
-    # ─── Exemplo 1: Visualização da Perda Hinge vs Margem Funcional ───────────
+    # Eixo de Margens para a curva Hinge
     margins = np.linspace(-2.0, 3.0, 100)
-    # Hinge loss para cada margem: max(0, 1 - m)
     losses = np.maximum(0.0, 1.0 - margins)
     
     plt.figure(figsize=(12, 5.5))
     
-    # Subplot 1: Função de Perda Hinge
+    # Subplot 1: Curva da Hinge Loss
     plt.subplot(1, 2, 1)
     plt.plot(margins, losses, label="Hinge Loss", color="red", linewidth=2.5)
     plt.axvline(x=1.0, color="gray", linestyle="--", label="Margem de Segurança (m=1)")
@@ -365,55 +345,154 @@ if __name__ == "__main__":
     plt.grid(True, linestyle=":")
     plt.legend()
     
-    # ─── Exemplo 2: Perda Hinge Média em um Dataset Toy 2D ───────────────────
-    # Criando 4 pontos em 2D
-    # X1 = [1, 2] (y = 1) -> Classificado correto, fora da margem
-    # X2 = [1, 0.5] (y = 1) -> Classificado correto, mas dentro da margem
-    # X3 = [-1, -1] (y = -1) -> Classificado correto, fora da margem
-    # X4 = [0.5, -0.5] (y = -1) -> Classificado incorreto (do lado positivo)
-    toy_features = np.array([
-        [1.0, 2.0],
-        [1.0, 0.5],
-        [-1.0, -1.0],
-        [0.5, -0.5]
-    ])
-    toy_labels = np.array([1, 1, -1, -1])
+    # Subplot 2: Dataset Toy e Margem de Segurança
+    # Usando o classificador θ = [1.0, 1.0], θ_0 = 0.0
+    theta_toy = np.array([1.0, 1.0])
+    theta_0_toy = 0.0
     
-    # Classificador: θ = [1, 1], θ_0 = 0
-    theta = np.array([1.0, 1.0])
-    theta_0 = 0.0
-    
-    # Computando perdas individuais e margens usando nossas funções
-    margins_toy = functional_margin(toy_features, toy_labels, theta, theta_0)
+    margins_toy = functional_margin(toy_features, toy_labels, theta_toy, theta_0_toy)
     losses_toy = np.maximum(0.0, 1.0 - margins_toy)
-    avg_loss = hinge_loss_full(toy_features, toy_labels, theta, theta_0)
+    avg_loss = hinge_loss_full(toy_features, toy_labels, theta_toy, theta_0_toy)
     
-    # Subplot 2: Dataset e Fronteira
     plt.subplot(1, 2, 2)
-    # Plota a fronteira de decisão x2 = -x1 (já que θ1*x1 + θ2*x2 = 0 => x2 = -x1)
-    x1_vals = np.linspace(-2.0, 2.0, 100)
+    x1_vals = np.linspace(-2.0, 3.0, 100)
     x2_vals = -x1_vals
     plt.plot(x1_vals, x2_vals, color="black", label="Fronteira (θ·x = 0)")
+    plt.plot(x1_vals, x2_vals + 1.0, color="gray", linestyle=":", label="Margem de Segurança")
+    plt.plot(x1_vals, x2_vals - 1.0, color="gray", linestyle=":")
     
-    # Plota as linhas de margem de segurança (θ·x = +1 e θ·x = -1)
-    plt.plot(x1_vals, x2_vals + 1/theta[1], color="gray", linestyle=":", label="Margem de Segurança")
-    plt.plot(x1_vals, x2_vals - 1/theta[1], color="gray", linestyle=":")
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        plt.text(toy_features[i, 0] + 0.15, toy_features[i, 1], f"Perda: {losses_toy[i]:.2f}", fontsize=10, weight='bold')
+        
+    plt.xlim(-2.0, 3.0)
+    plt.ylim(-2.0, 3.0)
+    plt.title(f"Hinge Loss Média no Dataset: {avg_loss:.3f}")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
     
+    plt.tight_layout()
+    plt.savefig(os.path.join(dir_path, "hinge_loss_visualization.png"))
+    plt.close()
+    print("Visualização salva em 'hinge_loss_visualization.png' com sucesso!")
+    
+    # ─── Visualização 2: Perceptron - Evolução do Ajuste ─────────────────────
+    print("Gerando visualizações para o Perceptron...")
+    
+    # Ambos os subplots mostram estados intermediários e finais do ajuste
+    # a partir da inicialização com zeros (θ = [0, 0], θ₀ = 0.0)
+    # Passo 1: θ = [1.0, 2.0], θ₀ = 1.0
+    # Passo 3 (Final): θ = [2.0, 1.5], θ₀ = -1.0
+    
+    plt.figure(figsize=(12, 5.5))
+    
+    # Subplot 1: Reta após o Passo 1 de atualização
+    plt.subplot(1, 2, 1)
+    # Reta após 1º update: x1 + 2x2 + 1 = 0 => x2 = -0.5*x1 - 0.5
+    plt.plot(x1_vals, -0.5 * x1_vals - 0.5, color="green", linewidth=2.5, label="Fronteira após Passo 1")
+    
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-2.0, 3.0)
+    plt.ylim(-2.0, 3.0)
+    plt.title("Perceptron: Após Passo 1 (θ = [1, 2], θ₀ = 1.0)")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    # Subplot 2: Reta final após a convergência (Passo 3)
+    plt.subplot(1, 2, 2)
+    # Reta final: 2*x1 + 1.5*x2 - 1 = 0 => x2 = - (2*x1 - 1) / 1.5
+    plt.plot(x1_vals, - (2.0 * x1_vals - 1.0) / 1.5, color="black", linewidth=3.0, label="Fronteira Final (Convergência)")
+    
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-2.0, 3.0)
+    plt.ylim(-2.0, 3.0)
+    plt.title("Perceptron: Convergência Final (θ = [2, 1.5], θ₀ = -1.0)")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(dir_path, "perceptron_visualization.png"))
+    plt.close()
+    print("Visualização do Perceptron salva em 'perceptron_visualization.png' com sucesso!")
+
+    # ─── Visualização 3: Caminho de Otimização do Perceptron ──────────────────
+    print("Gerando visualização do caminho do Perceptron (reta se ajeitando)...")
+    
+    # Rodar o Perceptron a partir do zero e rastrear cada atualização
+    theta_path = np.zeros(2)
+    theta_0_path = 0.0
+    
+    history = []
+    
+    for epoch in range(5):
+        epoch_updates = 0
+        for i in range(len(toy_labels)):
+            x_i = toy_features[i]
+            y_i = toy_labels[i]
+            if y_i * (np.dot(theta_path, x_i) + theta_0_path) <= 1e-9:
+                theta_path = theta_path + y_i * x_i
+                theta_0_path = theta_0_path + y_i
+                epoch_updates += 1
+                history.append((theta_path.copy(), theta_0_path, f"Passo {len(history) + 1}"))
+        if epoch_updates == 0:
+            break
+            
+    # Plotagem da trajetória
+    plt.figure(figsize=(8, 7))
+    x1_line_path = np.linspace(-3.0, 3.0, 100)
+    
+    # Desenha o Passo 0 no gráfico (reta ilustrativa x2 = -x1 passando pela origem para representar o estado nulo)
+    plt.plot(x1_line_path, -x1_line_path, color="red", linestyle=":", 
+             label="Passo 0 (Inicial): θ = [0, 0], θ₀ = 0.0 (Ilustrativa)", linewidth=2)
+    
+    # Cores progressivas (Blues) para indicar a evolução no tempo
+    colors = plt.cm.Blues(np.linspace(0.4, 1.0, len(history)))
+    
+    for k in range(len(history)):
+        w, b, label_name = history[k]
+        # w1 * x1 + w2 * x2 + b = 0 => x2 = - (w1 * x1 + b) / w2
+        if w[1] == 0:
+            plt.axvline(x=-b/w[0], color=colors[k], linestyle="-.", label=f"{label_name}: θ={w}, θ₀={b}", linewidth=2)
+        else:
+            plt.plot(x1_line_path, - (w[0] * x1_line_path + b) / w[1], 
+                     color=colors[k], linestyle="--", label=f"{label_name}: θ={w}, θ₀={b}", linewidth=2)
+            
+    # Destaca o separador final em linha preta contínua mais grossa
+    w_f, b_f, _ = history[-1]
+    plt.plot(x1_line_path, - (w_f[0] * x1_line_path + b_f) / w_f[1], 
+             color="black", label=f"Final (Convergência): θ={w_f}, θ₀={b_f}", linewidth=3)
+            
     # Plota os pontos
     for i in range(len(toy_labels)):
         color = "blue" if toy_labels[i] == 1 else "orange"
         marker = "^" if toy_labels[i] == 1 else "s"
         plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
-        plt.text(toy_features[i, 0] + 0.1, toy_features[i, 1], f"Perda: {losses_toy[i]:.2f}", fontsize=10, weight='bold')
         
-    plt.xlim(-2.0, 2.0)
-    plt.ylim(-2.0, 3.0)
-    plt.title(f"Hinge Loss Média no Dataset: {avg_loss:.3f}")
-    plt.xlabel("Característica 1 (x1)")
-    plt.ylabel("Característica 2 (x2)")
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Perceptron: Trajetória Completa partindo de θ = [0, 0]")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
     plt.grid(True, linestyle=":")
-    plt.legend()
+    plt.legend(loc="upper right", fontsize=8)
     
     plt.tight_layout()
-    plt.savefig("hinge_loss_visualization.png")
-    print("Visualização salva em 'hinge_loss_visualization.png' com sucesso!")
+    plt.savefig(os.path.join(dir_path, "perceptron_path_visualization.png"))
+    plt.close()
+    print("Visualização do caminho salva em 'perceptron_path_visualization.png' com sucesso!")
