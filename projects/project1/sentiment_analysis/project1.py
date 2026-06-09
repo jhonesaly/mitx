@@ -52,11 +52,14 @@ def perceptron_single_step_update(
         return current_theta, current_theta_0
 
 
+def initialize_parameters(n_features):
+    return np.zeros(n_features), 0.0
+
+
 
 def perceptron(feature_matrix, labels, T):
     nsamples, nfeatures = feature_matrix.shape
-    theta = np.zeros(nfeatures)
-    theta_0 = 0.0
+    theta, theta_0 = initialize_parameters(nfeatures)
     for t in range(T):
         for i in get_order(nsamples):
             theta, theta_0 = perceptron_single_step_update(
@@ -67,33 +70,19 @@ def perceptron(feature_matrix, labels, T):
 
 
 def average_perceptron(feature_matrix, labels, T):
-    """
-    Runs the average perceptron algorithm on a given dataset.  Runs `T`
-    iterations through the dataset (we do not stop early) and therefore
-    averages over `T` many parameter values.
-
-    NOTE: Please use the previously implemented functions when applicable.
-    Do not copy paste code from previous parts.
-
-    NOTE: It is more difficult to keep a running average than to sum and
-    divide.
-
-    Args:
-        `feature_matrix` -  A numpy matrix describing the given data. Each row
-            represents a single data point.
-        `labels` - A numpy array where the kth element of the array is the
-            correct classification of the kth row of the feature matrix.
-        `T` - An integer indicating how many times the perceptron algorithm
-            should iterate through the feature matrix.
-
-    Returns a tuple containing two values:
-        the average feature-coefficient parameter `theta` as a numpy array
-            (averaged over T iterations through the feature matrix)
-        the average offset parameter `theta_0` as a floating point number
-            (averaged also over T iterations through the feature matrix).
-    """
-    # Your code here
-    raise NotImplementedError
+    nsamples, nfeatures = feature_matrix.shape
+    theta, theta_0 = initialize_parameters(nfeatures)
+    theta_sum, theta_0_sum = initialize_parameters(nfeatures)
+    counter = 0
+    for t in range(T):
+        for i in get_order(nsamples):
+            theta, theta_0 = perceptron_single_step_update(
+                feature_matrix[i], labels[i], theta, theta_0
+            )
+            theta_sum += theta
+            theta_0_sum += theta_0
+            counter += 1
+    return theta_sum / counter, theta_0_sum / counter
 
 
 def pegasos_single_step_update(
@@ -316,20 +305,59 @@ if __name__ == "__main__":
     # Determina o diretório deste script para salvar as imagens na pasta correta
     dir_path = os.path.dirname(os.path.realpath(__file__))
     
-    # Novo dataset toy de 4 pontos que convém em exatamente 3 updates partindo do zero
+    # Novo dataset toy expandido contendo mais pontos e 2 outliers
+    # y = 1 (Azul/Triângulo), y = -1 (Laranja/Quadrado)
     toy_features = np.array([
-        [1.0, 2.0],
-        [2.0, 1.0],
-        [0.0, 0.0],
-        [-1.0, 0.5]
+        [1.0, 2.0],     # Triângulo Azul
+        [2.0, 1.0],     # Triângulo Azul
+        [1.5, 1.5],     # Triângulo Azul
+        [2.5, 2.0],     # Triângulo Azul
+        [2.0, 2.5],     # Triângulo Azul
+        [0.0, 0.0],     # Quadrado Laranja
+        [-1.0, 0.5],    # Quadrado Laranja
+        [-0.5, -0.5],   # Quadrado Laranja
+        [-1.5, 0.0],    # Quadrado Laranja
+        [-1.0, -1.0],   # Quadrado Laranja
+        # Outliers:
+        [1.5, 2.2],     # Quadrado Laranja (infiltrado no cluster azul)
+        [-0.8, -0.2]    # Triângulo Azul (infiltrado no cluster laranja)
     ])
-    toy_labels = np.array([1, 1, -1, -1])
+    toy_labels = np.array([1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1])
+
+    # Funções de treinamento sequenciais e determinísticas para os plots
+    def run_perceptron_sequential(feature_matrix, labels, T):
+        nsamples, nfeatures = feature_matrix.shape
+        theta = np.zeros(nfeatures)
+        theta_0 = 0.0
+        for t in range(T):
+            for i in range(nsamples):
+                theta, theta_0 = perceptron_single_step_update(
+                    feature_matrix[i], labels[i], theta, theta_0
+                )
+        return theta, theta_0
+
+    def run_average_perceptron_sequential(feature_matrix, labels, T):
+        nsamples, nfeatures = feature_matrix.shape
+        theta = np.zeros(nfeatures)
+        theta_0 = 0.0
+        theta_sum = np.zeros(nfeatures)
+        theta_0_sum = 0.0
+        counter = 0
+        for t in range(T):
+            for i in range(nsamples):
+                theta, theta_0 = perceptron_single_step_update(
+                    feature_matrix[i], labels[i], theta, theta_0
+                )
+                theta_sum += theta
+                theta_0_sum += theta_0
+                counter += 1
+        return theta_sum / counter, theta_0_sum / counter
     
     # ─── Visualização 1: Hinge Loss ──────────────────────────────────────────
     print("Gerando visualizações para hinge_loss_single e hinge_loss_full...")
     
     # Eixo de Margens para a curva Hinge
-    margins = np.linspace(-2.0, 3.0, 100)
+    margins = np.linspace(-3.0, 3.0, 100)
     losses = np.maximum(0.0, 1.0 - margins)
     
     plt.figure(figsize=(12, 5.5))
@@ -355,7 +383,7 @@ if __name__ == "__main__":
     avg_loss = hinge_loss_full(toy_features, toy_labels, theta_toy, theta_0_toy)
     
     plt.subplot(1, 2, 2)
-    x1_vals = np.linspace(-2.0, 3.0, 100)
+    x1_vals = np.linspace(-3.0, 3.0, 100)
     x2_vals = -x1_vals
     plt.plot(x1_vals, x2_vals, color="black", label="Fronteira (θ·x = 0)")
     plt.plot(x1_vals, x2_vals + 1.0, color="gray", linestyle=":", label="Margem de Segurança")
@@ -365,10 +393,11 @@ if __name__ == "__main__":
         color = "blue" if toy_labels[i] == 1 else "orange"
         marker = "^" if toy_labels[i] == 1 else "s"
         plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
-        plt.text(toy_features[i, 0] + 0.15, toy_features[i, 1], f"Perda: {losses_toy[i]:.2f}", fontsize=10, weight='bold')
+        # Exibe a perda de cada ponto no gráfico
+        plt.text(toy_features[i, 0] + 0.15, toy_features[i, 1], f"{losses_toy[i]:.1f}", fontsize=8, weight='bold')
         
-    plt.xlim(-2.0, 3.0)
-    plt.ylim(-2.0, 3.0)
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
     plt.title(f"Hinge Loss Média no Dataset: {avg_loss:.3f}")
     plt.xlabel("x1")
     plt.ylabel("x2")
@@ -383,10 +412,13 @@ if __name__ == "__main__":
     # ─── Visualização 2: Perceptron - Evolução do Ajuste ─────────────────────
     print("Gerando visualizações para o Perceptron...")
     
-    # Ambos os subplots mostram estados intermediários e finais do ajuste
-    # a partir da inicialização com zeros (θ = [0, 0], θ₀ = 0.0)
-    # Passo 1: θ = [1.0, 2.0], θ₀ = 1.0
-    # Passo 3 (Final): θ = [2.0, 1.5], θ₀ = -1.0
+    # Executa a primeira atualização sequencial (Passo 1)
+    theta_zeros = np.zeros(2)
+    theta_0_zeros = 0.0
+    theta_step1, theta_0_step1 = perceptron_single_step_update(toy_features[0], toy_labels[0], theta_zeros, theta_0_zeros)
+    
+    # Executa a fronteira do perceptron padrão final após T = 5 épocas
+    theta_final_std, theta_0_final_std = run_perceptron_sequential(toy_features, toy_labels, 5)
     
     plt.figure(figsize=(12, 5.5))
     
@@ -400,27 +432,27 @@ if __name__ == "__main__":
         marker = "^" if toy_labels[i] == 1 else "s"
         plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
         
-    plt.xlim(-2.0, 3.0)
-    plt.ylim(-2.0, 3.0)
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
     plt.title("Perceptron: Após Passo 1 (θ = [1, 2], θ₀ = 1.0)")
     plt.xlabel("x1")
     plt.ylabel("x2")
     plt.grid(True, linestyle=":")
     plt.legend()
     
-    # Subplot 2: Reta final após a convergência (Passo 3)
+    # Subplot 2: Reta final após T=5 épocas (não converge perfeitamente devido aos outliers)
     plt.subplot(1, 2, 2)
-    # Reta final: 2*x1 + 1.5*x2 - 1 = 0 => x2 = - (2*x1 - 1) / 1.5
-    plt.plot(x1_vals, - (2.0 * x1_vals - 1.0) / 1.5, color="black", linewidth=3.0, label="Fronteira Final (Convergência)")
+    plt.plot(x1_vals, - (theta_final_std[0] * x1_vals + theta_0_final_std) / theta_final_std[1], 
+             color="black", linewidth=3.0, label=f"Fronteira Final: θ={theta_final_std}, θ₀={theta_0_final_std:.1f}")
     
     for i in range(len(toy_labels)):
         color = "blue" if toy_labels[i] == 1 else "orange"
         marker = "^" if toy_labels[i] == 1 else "s"
         plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
         
-    plt.xlim(-2.0, 3.0)
-    plt.ylim(-2.0, 3.0)
-    plt.title("Perceptron: Convergência Final (θ = [2, 1.5], θ₀ = -1.0)")
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Perceptron Padrão: Estado Final (T = 5 Épocas)")
     plt.xlabel("x1")
     plt.ylabel("x2")
     plt.grid(True, linestyle=":")
@@ -430,54 +462,71 @@ if __name__ == "__main__":
     plt.savefig(os.path.join(dir_path, "perceptron_visualization.png"))
     plt.close()
     print("Visualização do Perceptron salva em 'perceptron_visualization.png' com sucesso!")
-
-    # ─── Visualização 3: Caminho de Otimização do Perceptron ──────────────────
+ 
+    # ─── Visualização 3: Caminho de Otimização (Clássico vs Average) ──────────
     print("Gerando visualização do caminho do Perceptron (reta se ajeitando)...")
     
-    # Rodar o Perceptron a partir do zero e rastrear cada atualização
+    # Rastreia a evolução dos pesos clássicos e das médias corrente a cada update
     theta_path = np.zeros(2)
     theta_0_path = 0.0
+    theta_sum = np.zeros(2)
+    theta_0_sum = 0.0
+    counter = 0
     
-    history = []
+    history_std = []
+    history_avg = []
     
     for epoch in range(5):
-        epoch_updates = 0
         for i in range(len(toy_labels)):
             x_i = toy_features[i]
             y_i = toy_labels[i]
+            updated = False
             if y_i * (np.dot(theta_path, x_i) + theta_0_path) <= 1e-9:
                 theta_path = theta_path + y_i * x_i
                 theta_0_path = theta_0_path + y_i
-                epoch_updates += 1
-                history.append((theta_path.copy(), theta_0_path, f"Passo {len(history) + 1}"))
-        if epoch_updates == 0:
-            break
+                updated = True
             
-    # Plotagem da trajetória
-    plt.figure(figsize=(8, 7))
+            theta_sum += theta_path
+            theta_0_sum += theta_0_path
+            counter += 1
+            
+            if updated:
+                history_std.append((theta_path.copy(), theta_0_path, f"Passo {len(history_std) + 1}"))
+                history_avg.append((theta_sum.copy() / counter, theta_0_sum / counter, f"Média {len(history_avg) + 1}"))
+
+    # Configuração da figura com 2 subplots lado a lado para comparação direta
+    plt.figure(figsize=(15, 7))
     x1_line_path = np.linspace(-3.0, 3.0, 100)
     
-    # Desenha o Passo 0 no gráfico (reta ilustrativa x2 = -x1 passando pela origem para representar o estado nulo)
+    # Cores bem distintas e contrastantes para as retas intermediárias
+    colors_list = ["green", "blue", "purple", "orange", "magenta", "cyan"]
+    
+    # Limita o número de passos intermediários mostrados para não poluir
+    max_steps_to_plot = 5
+    plot_indices = list(range(min(len(history_std), max_steps_to_plot)))
+    if len(history_std) > max_steps_to_plot and (len(history_std) - 1) not in plot_indices:
+        plot_indices.append(len(history_std) - 1)
+        
+    # --- Subplot 1: Perceptron Clássico ---
+    plt.subplot(1, 2, 1)
+    # Desenha o Passo 0 ilustrativo
     plt.plot(x1_line_path, -x1_line_path, color="red", linestyle=":", 
              label="Passo 0 (Inicial): θ = [0, 0], θ₀ = 0.0 (Ilustrativa)", linewidth=2)
-    
-    # Cores progressivas (Blues) para indicar a evolução no tempo
-    colors = plt.cm.Blues(np.linspace(0.4, 1.0, len(history)))
-    
-    for k in range(len(history)):
-        w, b, label_name = history[k]
-        # w1 * x1 + w2 * x2 + b = 0 => x2 = - (w1 * x1 + b) / w2
+             
+    for idx, k in enumerate(plot_indices):
+        w, b, label_name = history_std[k]
+        color_val = colors_list[idx % len(colors_list)]
         if w[1] == 0:
-            plt.axvline(x=-b/w[0], color=colors[k], linestyle="-.", label=f"{label_name}: θ={w}, θ₀={b}", linewidth=2)
+            plt.axvline(x=-b/w[0], color=color_val, linestyle="--", label=f"{label_name}: θ={w}, θ₀={b:.1f}", linewidth=2)
         else:
             plt.plot(x1_line_path, - (w[0] * x1_line_path + b) / w[1], 
-                     color=colors[k], linestyle="--", label=f"{label_name}: θ={w}, θ₀={b}", linewidth=2)
-            
+                     color=color_val, linestyle="--", label=f"{label_name}: θ={w}, θ₀={b:.1f}", linewidth=2)
+                     
     # Destaca o separador final em linha preta contínua mais grossa
-    w_f, b_f, _ = history[-1]
+    w_f, b_f, _ = history_std[-1]
     plt.plot(x1_line_path, - (w_f[0] * x1_line_path + b_f) / w_f[1], 
-             color="black", label=f"Final (Convergência): θ={w_f}, θ₀={b_f}", linewidth=3)
-            
+             color="black", label=f"Final (Passo {len(history_std)}): θ={w_f}, θ₀={b_f:.1f}", linewidth=3)
+             
     # Plota os pontos
     for i in range(len(toy_labels)):
         color = "blue" if toy_labels[i] == 1 else "orange"
@@ -486,7 +535,43 @@ if __name__ == "__main__":
         
     plt.xlim(-3.0, 3.0)
     plt.ylim(-3.0, 3.0)
-    plt.title("Perceptron: Trajetória Completa partindo de θ = [0, 0]")
+    plt.title("Caminho do Perceptron Clássico (Altamente Instável)")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend(loc="upper right", fontsize=8)
+    
+    # --- Subplot 2: Average Perceptron (Média Acumulada) ---
+    plt.subplot(1, 2, 2)
+    # Desenha o Passo 0 ilustrativo para a média
+    plt.plot(x1_line_path, -x1_line_path, color="red", linestyle=":", 
+             label="Média Inicial: θ = [0, 0], θ₀ = 0.0 (Ilustrativa)", linewidth=2)
+             
+    for idx, k in enumerate(plot_indices):
+        w, b, label_name = history_avg[k]
+        color_val = colors_list[idx % len(colors_list)]
+        w_str = f"[{w[0]:.2f} {w[1]:.2f}]"
+        if w[1] == 0:
+            plt.axvline(x=-b/w[0], color=color_val, linestyle="--", label=f"{label_name}: θ={w_str}, θ₀={b:.2f}", linewidth=2)
+        else:
+            plt.plot(x1_line_path, - (w[0] * x1_line_path + b) / w[1], 
+                     color=color_val, linestyle="--", label=f"{label_name}: θ={w_str}, θ₀={b:.2f}", linewidth=2)
+                     
+    # Destaca a média final em linha preta contínua mais grossa
+    w_f_avg, b_f_avg, _ = history_avg[-1]
+    w_f_str = f"[{w_f_avg[0]:.2f} {w_f_avg[1]:.2f}]"
+    plt.plot(x1_line_path, - (w_f_avg[0] * x1_line_path + b_f_avg) / w_f_avg[1], 
+             color="black", label=f"Média Final: θ={w_f_str}, θ₀={b_f_avg:.2f}", linewidth=3)
+             
+    # Plota os pontos
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Caminho do Average Perceptron (Estabilizando no Tempo)")
     plt.xlabel("x1")
     plt.ylabel("x2")
     plt.grid(True, linestyle=":")
@@ -495,4 +580,62 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig(os.path.join(dir_path, "perceptron_path_visualization.png"))
     plt.close()
-    print("Visualização do caminho salva em 'perceptron_path_visualization.png' com sucesso!")
+    print("Visualização do caminho comparativo salva em 'perceptron_path_visualization.png' com sucesso!")
+
+    # ─── Visualização 4: Average Perceptron vs Perceptron Padrão ──────────────
+    print("Gerando visualizações para o Average Perceptron...")
+    
+    # Execuções sequenciais para T = 1 e T = 5
+    theta_std_1, theta_0_std_1 = run_perceptron_sequential(toy_features, toy_labels, 1)
+    theta_avg_1, theta_0_avg_1 = run_average_perceptron_sequential(toy_features, toy_labels, 1)
+    
+    theta_std_5, theta_0_std_5 = run_perceptron_sequential(toy_features, toy_labels, 5)
+    theta_avg_5, theta_0_avg_5 = run_average_perceptron_sequential(toy_features, toy_labels, 5)
+    
+    plt.figure(figsize=(12, 5.5))
+    x1_line = np.linspace(-3.0, 3.0, 100)
+    
+    # Subplot 1: T = 1 época
+    plt.subplot(1, 2, 1)
+    plt.plot(x1_line, - (theta_std_1[0] * x1_line + theta_0_std_1) / theta_std_1[1],
+             color="black", linewidth=2.5, label="Perceptron Padrão")
+    plt.plot(x1_line, - (theta_avg_1[0] * x1_line + theta_0_avg_1) / theta_avg_1[1],
+             color="purple", linestyle="--", linewidth=2.5, label="Average Perceptron")
+             
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Average vs Padrão (T = 1 Época)\nNote a oscilação inicial")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    # Subplot 2: T = 5 épocas (Demonstração de robustez a outliers)
+    plt.subplot(1, 2, 2)
+    plt.plot(x1_line, - (theta_std_5[0] * x1_line + theta_0_std_5) / theta_std_5[1],
+             color="black", linewidth=2.5, label="Perceptron Padrão")
+    plt.plot(x1_line, - (theta_avg_5[0] * x1_line + theta_0_avg_5) / theta_avg_5[1],
+             color="purple", linestyle="--", linewidth=2.5, label="Average Perceptron")
+             
+    for i in range(len(toy_labels)):
+        color = "blue" if toy_labels[i] == 1 else "orange"
+        marker = "^" if toy_labels[i] == 1 else "s"
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], color=color, marker=marker, s=120, edgecolors='black', zorder=5)
+        
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title("Average vs Padrão (T = 5 Épocas)\nAverage é muito mais estável")
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(dir_path, "average_perceptron_visualization.png"))
+    plt.close()
+    print("Visualização do Average Perceptron salva em 'average_perceptron_visualization.png' com sucesso!")
