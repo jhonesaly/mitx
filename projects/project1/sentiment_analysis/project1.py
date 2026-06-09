@@ -272,6 +272,8 @@ if __name__ == "__main__":
     
     # Determina o diretório deste script para salvar as imagens na pasta correta
     dir_path = os.path.dirname(os.path.realpath(__file__))
+    plots_dir = os.path.join(dir_path, "plots")
+    os.makedirs(plots_dir, exist_ok=True)
     
     # Novo dataset toy expandido contendo mais pontos e 2 outliers
     # y = 1 (Azul/Triângulo), y = -1 (Laranja/Quadrado)
@@ -383,7 +385,7 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "hinge_loss_visualization.png"))
+    plt.savefig(os.path.join(plots_dir, "hinge_loss_visualization.png"))
     plt.close()
     print("Visualização salva em 'hinge_loss_visualization.png' com sucesso!")
     
@@ -437,7 +439,7 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "perceptron_visualization.png"))
+    plt.savefig(os.path.join(plots_dir, "perceptron_visualization.png"))
     plt.close()
     print("Visualização do Perceptron salva em 'perceptron_visualization.png' com sucesso!")
  
@@ -556,7 +558,7 @@ if __name__ == "__main__":
     plt.legend(loc="upper right", fontsize=8)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "perceptron_path_visualization.png"))
+    plt.savefig(os.path.join(plots_dir, "perceptron_path_visualization.png"))
     plt.close()
     print("Visualização do caminho comparativo salva em 'perceptron_path_visualization.png' com sucesso!")
 
@@ -614,7 +616,7 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "average_perceptron_visualization.png"))
+    plt.savefig(os.path.join(plots_dir, "average_perceptron_visualization.png"))
     plt.close()
     print("Visualização do Average Perceptron salva em 'average_perceptron_visualization.png' com sucesso!")
 
@@ -677,7 +679,7 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "pegasos_visualization.png"))
+    plt.savefig(os.path.join(plots_dir, "pegasos_visualization.png"))
     plt.close()
     print("Visualização do Pegasos salva em 'pegasos_visualization.png' com sucesso!")
 
@@ -756,7 +758,7 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "pegasos_objective_optimization.png"))
+    plt.savefig(os.path.join(plots_dir, "pegasos_objective_optimization.png"))
     plt.close()
     print("Visualização da otimização do Pegasos salva em 'pegasos_objective_optimization.png' com sucesso!")
 
@@ -802,6 +804,6 @@ if __name__ == "__main__":
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig(os.path.join(dir_path, "pegasos_L_impact_visualization.png"))
+    plt.savefig(os.path.join(plots_dir, "pegasos_L_impact_visualization.png"))
     plt.close()
     print("Visualização do impacto do L salva em 'pegasos_L_impact_visualization.png' com sucesso!")

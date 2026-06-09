@@ -303,14 +303,14 @@ para os três algoritmos (com precisão de até 4 casas decimais). Por exemplo, 
 $\theta = (1, 0.5)$, informe como `1, 0.5`.
 
 - **Para o algoritmo Perceptron**:
-  - $\theta = \_\_\_\_\_\_\_\_$
-  - $\theta_0 = \_\_\_\_\_\_\_\_$
+  - $\theta = 3.9174, 4.164$
+  - $\theta_0 = -8.0$
 - **Para o algoritmo Perceptron Médio**:
-  - $\theta = \_\_\_\_\_\_\_\_$
-  - $\theta_0 = \_\_\_\_\_\_\_\_$
+  - $\theta = 3.4783, 3.6111$
+  - $\theta_0 = -6.373$
 - **Para o algoritmo Pegasos**:
-  - $\theta = \_\_\_\_\_\_\_\_$
-  - $\theta_0 = \_\_\_\_\_\_\_\_$
+  - $\theta = 0.7346, 0.6300$
+  - $\theta_0 = -1.2195$
 
 ---
 
@@ -326,8 +326,8 @@ $\theta$ converge na primeira casa decimal.
 (Selecione todas as opções que se aplicam):
 
 - [ ] Algoritmo Perceptron
-- [ ] Algoritmo Perceptron Médio
-- [ ] Algoritmo Pegasos
+- [x] Algoritmo Perceptron Médio
+- [x] Algoritmo Pegasos
 
 # 6. Analisador de Avaliações de Produtos
 
