@@ -5,6 +5,9 @@ import os
 import matplotlib
 matplotlib.use('Agg')
 
+ARTIFACT_DIR = r"C:\Users\jhone\.gemini\antigravity-ide\brain\4ed95c1d-c199-4037-8f2d-20147be8553b"
+
+
 
 #-------------------------------------------------------------------------------
 # Data loading.
@@ -84,19 +87,20 @@ if __name__ == '__main__':
         plt.legend(loc='upper right')
         
         # Salva o arquivo PNG localmente
+        os.makedirs('plots', exist_ok=True)
         filename = f"toy_{algo_name.lower().replace(' ', '_')}.png"
-        plt.savefig(filename, dpi=150, bbox_inches='tight')
+        filepath = os.path.join('plots', filename)
+        plt.savefig(filepath, dpi=150, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfico do toy dataset salvo em '{filepath}'")
         
         # Copia a imagem para o diretório de artefatos para o usuário visualizar
-        artifact_dir = r"C:\Users\jhone\.gemini\antigravity-ide\brain\1a9fd251-be8f-46f8-94bc-ed648e779640"
-        if os.path.exists(artifact_dir):
+        if os.path.exists(ARTIFACT_DIR):
             try:
                 import shutil
-                shutil.copy(filename, os.path.join(artifact_dir, filename))
-            except Exception as e:
+                shutil.copy(filepath, os.path.join(ARTIFACT_DIR, filename))
+            except Exception:
                 pass
-                
-        plt.show()
 
     plot_toy_results('Perceptron', thetas_perceptron)
     plot_toy_results('Average Perceptron', thetas_avg_perceptron)
@@ -128,31 +132,128 @@ if __name__ == '__main__':
     #-------------------------------------------------------------------------------
     # Problem 8 (Opcional - Ativar quando tuning estiver pronto)
     #-------------------------------------------------------------------------------
-    # if bow_ready:
-    #     print("\n--- Executando Problem 8 (Tuning) ---")
-    #     data = (train_bow_features, train_labels, val_bow_features, val_labels)
-    #     Ts = [1, 5, 10, 15, 25, 50]
-    #     Ls = [0.001, 0.01, 0.1, 1, 10]
-    #     
-    #     pct_tune_results = utils.tune_perceptron(Ts, *data)
-    #     print('perceptron valid:', list(zip(Ts, pct_tune_results[1])))
-    #     print('best = {:.4f}, T={:.4f}'.format(np.max(pct_tune_results[1]), Ts[np.argmax(pct_tune_results[1])]))
-    #     
-    #     avg_pct_tune_results = utils.tune_avg_perceptron(Ts, *data)
-    #     print('avg perceptron valid:', list(zip(Ts, avg_pct_tune_results[1])))
-    #     print('best = {:.4f}, T={:.4f}'.format(np.max(avg_pct_tune_results[1]), Ts[np.argmax(avg_pct_tune_results[1])]))
-    #     
-    #     fix_L = 0.01
-    #     peg_tune_results_T = utils.tune_pegasos_T(fix_L, Ts, *data)
-    #     print('Pegasos valid: tune T', list(zip(Ts, peg_tune_results_T[1])))
-    #     print('best = {:.4f}, T={:.4f}'.format(np.max(peg_tune_results_T[1]), Ts[np.argmax(peg_tune_results_T[1])]))
-    #     
-    #     fix_T = Ts[np.argmax(peg_tune_results_T[1])]
-    #     peg_tune_results_L = utils.tune_pegasos_L(fix_T, Ls, *data)
-    #     print('Pegasos valid: tune L', list(zip(Ls, peg_tune_results_L[1])))
-    #     print('best = {:.4f}, L={:.4f}'.format(np.max(peg_tune_results_L[1]), Ls[np.argmax(peg_tune_results_L[1])]))
-    #     
-    #     utils.plot_tune_results('Perceptron', 'T', Ts, *pct_tune_results)
-    #     utils.plot_tune_results('Avg Perceptron', 'T', Ts, *avg_pct_tune_results)
-    #     utils.plot_tune_results('Pegasos', 'T', Ts, *peg_tune_results_T)
-    #     utils.plot_tune_results('Pegasos', 'L', Ls, *peg_tune_results_L)
+    if bow_ready:
+        print("\n--- Executando Problem 8 (Tuning) ---")
+        data = (train_bow_features, train_labels, val_bow_features, val_labels)
+        Ts = [1, 5, 10, 15, 25, 50]
+        Ls = [0.001, 0.01, 0.1, 1, 10]
+        
+        def custom_plot_tune_results(algo_name, param_name, param_vals, acc_train, acc_val, filename):
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(7, 5.5))
+            
+            # Plota acurácias com estilo premium
+            plt.plot(param_vals, acc_train, marker='o', markersize=8, color='royalblue', linewidth=2.5, label='Acurácia de Treino')
+            plt.plot(param_vals, acc_val, marker='s', markersize=8, color='darkorange', linewidth=2.5, label='Acurácia de Validação')
+            
+            # Estilização
+            algo_title = ' '.join((word.capitalize() for word in algo_name.split(' ')))
+            param_title = param_name.capitalize()
+            plt.title(f'Acurácia vs {param_title}\n({algo_title})', fontsize=12, fontweight='bold', pad=15)
+            plt.xlabel(param_title, fontsize=10, labelpad=8)
+            plt.ylabel('Acurácia', fontsize=10, labelpad=8)
+            
+            if param_name.upper() == 'L' or param_name.upper() == 'LAMBDA':
+                plt.xscale('log')
+                
+            plt.grid(True, linestyle='--', alpha=0.5)
+            plt.legend(loc='lower right', frameon=True, facecolor='whitesmoke', edgecolor='gray')
+            plt.tight_layout()
+            
+            # Salva o arquivo na pasta de plots
+            os.makedirs('plots', exist_ok=True)
+            filepath = os.path.join('plots', filename)
+            plt.savefig(filepath, dpi=150)
+            plt.close()
+            print(f"Gráfico de tuning salvo em '{filepath}'")
+            
+            # Copia para a pasta de artefatos da conversa atual
+            if os.path.exists(ARTIFACT_DIR):
+                try:
+                    import shutil
+                    shutil.copy(filepath, os.path.join(ARTIFACT_DIR, filename))
+                except Exception:
+                    pass
+
+        pct_tune_results = utils.tune_perceptron(Ts, *data)
+        # Tabela Perceptron
+        print("\n" + "="*50)
+        print(" RESULTADOS DO TUNING: PERCEPTRON (T)")
+        print("="*50)
+        print("|    T    | Acurácia Treino | Acurácia Validação |")
+        print("+---------+-----------------+--------------------+")
+        for t, t_acc, v_acc in zip(Ts, pct_tune_results[0], pct_tune_results[1]):
+            print(f"|  {t:5d}  |     {t_acc:7.2%}     |      {v_acc:7.2%}      |")
+        print("="*50)
+        print('best = {:.4f}, T={:.4f}'.format(np.max(pct_tune_results[1]), Ts[np.argmax(pct_tune_results[1])]))
+        
+        avg_pct_tune_results = utils.tune_avg_perceptron(Ts, *data)
+        # Tabela Average Perceptron
+        print("\n" + "="*50)
+        print(" RESULTADOS DO TUNING: AVERAGE PERCEPTRON (T)")
+        print("="*50)
+        print("|    T    | Acurácia Treino | Acurácia Validação |")
+        print("+---------+-----------------+--------------------+")
+        for t, t_acc, v_acc in zip(Ts, avg_pct_tune_results[0], avg_pct_tune_results[1]):
+            print(f"|  {t:5d}  |     {t_acc:7.2%}     |      {v_acc:7.2%}      |")
+        print("="*50)
+        print('best = {:.4f}, T={:.4f}'.format(np.max(avg_pct_tune_results[1]), Ts[np.argmax(avg_pct_tune_results[1])]))
+        
+        fix_L = 0.01
+        peg_tune_results_T = utils.tune_pegasos_T(fix_L, Ts, *data)
+        # Tabela Pegasos T
+        print("\n" + "="*50)
+        print(" RESULTADOS DO TUNING: PEGASOS (T) [L=0.01]")
+        print("="*50)
+        print("|    T    | Acurácia Treino | Acurácia Validação |")
+        print("+---------+-----------------+--------------------+")
+        for t, t_acc, v_acc in zip(Ts, peg_tune_results_T[0], peg_tune_results_T[1]):
+            print(f"|  {t:5d}  |     {t_acc:7.2%}     |      {v_acc:7.2%}      |")
+        print("="*50)
+        print('best = {:.4f}, T={:.4f}'.format(np.max(peg_tune_results_T[1]), Ts[np.argmax(peg_tune_results_T[1])]))
+        
+        fix_T = Ts[np.argmax(peg_tune_results_T[1])]
+        peg_tune_results_L = utils.tune_pegasos_L(fix_T, Ls, *data)
+        # Tabela Pegasos L
+        print("\n" + "="*50)
+        print(f" RESULTADOS DO TUNING: PEGASOS (L) [T={fix_T}]")
+        print("="*50)
+        print("|    L    | Acurácia Treino | Acurácia Validação |")
+        print("+---------+-----------------+--------------------+")
+        for l, t_acc, v_acc in zip(Ls, peg_tune_results_L[0], peg_tune_results_L[1]):
+            print(f"| {l:7.3f} |     {t_acc:7.2%}     |      {v_acc:7.2%}      |")
+        print("="*50)
+        print('best = {:.4f}, L={:.4f}'.format(np.max(peg_tune_results_L[1]), Ls[np.argmax(peg_tune_results_L[1])]))
+        
+        custom_plot_tune_results('Perceptron', 'T', Ts, pct_tune_results[0], pct_tune_results[1], 'tune_perceptron_T.png')
+        custom_plot_tune_results('Avg Perceptron', 'T', Ts, avg_pct_tune_results[0], avg_pct_tune_results[1], 'tune_avg_perceptron_T.png')
+        custom_plot_tune_results('Pegasos', 'T', Ts, peg_tune_results_T[0], peg_tune_results_T[1], 'tune_pegasos_T.png')
+        custom_plot_tune_results('Pegasos', 'L', Ls, peg_tune_results_L[0], peg_tune_results_L[1], 'tune_pegasos_L.png')
+
+        # Computa acurácia de teste do melhor modelo
+        best_pct_T = Ts[np.argmax(pct_tune_results[1])]
+        best_avg_pct_T = Ts[np.argmax(avg_pct_tune_results[1])]
+        best_peg_T = Ts[np.argmax(peg_tune_results_T[1])]
+        best_peg_L = Ls[np.argmax(peg_tune_results_L[1])]
+
+        print("\n--- Computando acurácia no conjunto de teste ---")
+        # Test accuracy para o Perceptron
+        pct_test_acc = p1.accuracy(p1.classify(test_bow_features, *p1.perceptron(train_bow_features, train_labels, T=best_pct_T)), test_labels)
+        print(f"Test accuracy for Perceptron (T={best_pct_T}): {pct_test_acc:.4f}")
+        
+        # Test accuracy para o Perceptron Médio
+        avg_pct_test_acc = p1.accuracy(p1.classify(test_bow_features, *p1.average_perceptron(train_bow_features, train_labels, T=best_avg_pct_T)), test_labels)
+        print(f"Test accuracy for Average Perceptron (T={best_avg_pct_T}): {avg_pct_test_acc:.4f}")
+        
+        # Test accuracy para o Pegasos
+        peg_test_acc = p1.accuracy(p1.classify(test_bow_features, *p1.pegasos(train_bow_features, train_labels, T=best_peg_T, L=best_peg_L)), test_labels)
+        print(f"Test accuracy for Pegasos (T={best_peg_T}, L={best_peg_L}): {peg_test_acc:.4f}")
+
+        # Obtendo as 10 palavras mais explicativas para classificação positiva
+        wordlist = [word for (word, index) in sorted(dictionary.items(), key=lambda x: x[1])]
+        best_theta, best_theta_0 = p1.pegasos(train_bow_features, train_labels, T=best_peg_T, L=best_peg_L)
+        explanatory_words = utils.most_explanatory_word(best_theta, wordlist)
+        print("\n--- 10 unigramas mais explicativos para classificação positiva ---")
+        for idx, word in enumerate(explanatory_words[:10]):
+            print(f"{idx+1}. Top {idx+1}: {word}")
+

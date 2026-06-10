@@ -519,15 +519,15 @@ Após rodar o ajuste no [main.py](sentiment_analysis/main.py), insira os melhore
 valores encontrados e a acurácia de validação associada:
 
 - **Algoritmo Perceptron**:
-  - Melhor $T = \_\_\_\_\_\_\_\_$
-  - Acurácia de validação = $\_\_\_\_\_\_\_\_$
+  - Melhor $T = 25$
+  - Acurácia de validação = $0.7940$
 - **Algoritmo Perceptron Médio**:
-  - Melhor $T = \_\_\_\_\_\_\_\_$
-  - Acurácia de validação = $\_\_\_\_\_\_\_\_$
+  - Melhor $T = 25$
+  - Acurácia de validação = $0.8000$
 - **Algoritmo Pegasos**:
-  - Melhor $T = \_\_\_\_\_\_\_\_$
-  - Melhor $\lambda = \_\_\_\_\_\_\_\_$
-  - Acurácia de validação = $\_\_\_\_\_\_\_\_$
+  - Melhor $T = 25$
+  - Melhor $\lambda = 0.01$
+  - Acurácia de validação = $0.8060$
 
 ---
 
@@ -538,7 +538,7 @@ use-o para computar a acurácia de teste no conjunto de teste. No script
 [main.py](sentiment_analysis/main.py), a matriz de características e os rótulos de
 teste são fornecidos como `test_bow_features` e `test_labels`.
 
-- **Acurácia no conjunto de teste**: `[____]`
+- **Acurácia no conjunto de teste**: `0.8020`
 
 ---
 
@@ -551,16 +551,16 @@ para chamar `utils.most_explanatory_word`.
 
 Relate os dez unigramas mais explicativos para classificação positiva abaixo:
 
-1. Top 1: `[____]`
-2. Top 2: `[____]`
-3. Top 3: `[____]`
-4. Top 4: `[____]`
-5. Top 5: `[____]`
-6. Top 6: `[____]`
-7. Top 7: `[____]`
-8. Top 8: `[____]`
-9. Top 9: `[____]`
-10. Top 10: `[____]`
+1. Top 1: `delicious`
+2. Top 2: `great`
+3. Top 3: `!`
+4. Top 4: `best`
+5. Top 5: `perfect`
+6. Top 6: `loves`
+7. Top 7: `wonderful`
+8. Top 8: `glad`
+9. Top 9: `love`
+10. Top 10: `quickly`
 
 *Dica: Você também pode experimentar encontrar os unigramas que foram os mais
 impactantes na previsão de rótulos negativos.*
