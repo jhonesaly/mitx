@@ -149,8 +149,8 @@ def classify(feature_matrix, theta, theta_0):
         given theta and theta_0. If a prediction is GREATER THAN zero, it
         should be considered a positive classification.
     """
-    # Your code here
-    raise NotImplementedError
+    preds = np.dot(feature_matrix, theta) + theta_0
+    return np.where(preds > 1e-9, 1, -1)
 
 
 def classifier_accuracy(
@@ -186,8 +186,10 @@ def classifier_accuracy(
         trained classifier on the training data and the second element is the
         accuracy of the trained classifier on the validation data.
     """
-    # Your code here
-    raise NotImplementedError
+    theta, theta_0 = classifier(train_feature_matrix, train_labels, **kwargs)
+    train_preds = classify(train_feature_matrix, theta, theta_0)
+    val_preds = classify(val_feature_matrix, theta, theta_0)
+    return accuracy(train_preds, train_labels), accuracy(val_preds, val_labels)
 
 
 
@@ -200,9 +202,6 @@ def extract_words(text):
         a list of lowercased words in the string, where punctuation and digits
         count as their own words.
     """
-    # Your code here
-    raise NotImplementedError
-
     for c in punctuation + digits:
         text = text.replace(c, ' ' + c + ' ')
     return text.lower().split()
@@ -220,15 +219,27 @@ def bag_of_words(texts, remove_stopword=False):
         a dictionary that maps each word appearing in `texts` to a unique
         integer `index`.
     """
-    # Your code here
-    raise NotImplementedError
-    
+    stopwords = set()
+    if remove_stopword:
+        for candidate in ("stopwords.txt", "sentiment_analysis/stopwords.txt"):
+            try:
+                with open(candidate, "r", encoding="utf-8") as f:
+                    for line in f:
+                        word = line.strip().lower()
+                        if word:
+                            stopwords.add(word)
+                break
+            except FileNotFoundError:
+                continue
+
     indices_by_word = {}  # maps word to unique index
     for text in texts:
         word_list = extract_words(text)
         for word in word_list:
-            if word in indices_by_word: continue
-            if word in stopword: continue
+            if remove_stopword and word in stopwords:
+                continue
+            if word in indices_by_word:
+                continue
             indices_by_word[word] = len(indices_by_word)
 
     return indices_by_word
@@ -245,16 +256,15 @@ def extract_bow_feature_vectors(reviews, indices_by_word, binarize=True):
         matrix thus has shape (n, m), where n counts reviews and m counts words
         in the dictionary.
     """
-    # Your code here
     feature_matrix = np.zeros([len(reviews), len(indices_by_word)], dtype=np.float64)
     for i, text in enumerate(reviews):
         word_list = extract_words(text)
         for word in word_list:
-            if word not in indices_by_word: continue
+            if word not in indices_by_word:
+                continue
             feature_matrix[i, indices_by_word[word]] += 1
     if binarize:
-        # Your code here
-        raise NotImplementedError
+        feature_matrix = np.where(feature_matrix > 0, 1.0, 0.0)
     return feature_matrix
 
 
@@ -807,3 +817,57 @@ if __name__ == "__main__":
     plt.savefig(os.path.join(plots_dir, "pegasos_L_impact_visualization.png"))
     plt.close()
     print("Visualização do impacto do L salva em 'pegasos_L_impact_visualization.png' com sucesso!")
+
+    # ─── Visualização 8: Exemplo de Classificação e Acurácia ──────────────────
+    print("Gerando visualizações para classificação e acurácia...")
+    
+    # 1. Escolhemos um classificador e o treinamos no dataset toy
+    theta_toy, theta_0_toy = run_average_perceptron_sequential(toy_features, toy_labels, T=5)
+    
+    # 2. Executamos o método de classificação (classify)
+    preds_toy = classify(toy_features, theta_toy, theta_0_toy)
+    
+    # 3. Calculamos a acurácia usando o método de acurácia (accuracy)
+    acc_toy = accuracy(preds_toy, toy_labels)
+    print(f"Acurácia obtida no toy dataset: {acc_toy:.4f}")
+    
+    plt.figure(figsize=(8, 7))
+    x1_line = np.linspace(-3.0, 3.0, 100)
+    
+    # Plota a fronteira de decisão aprendida
+    if theta_toy[1] != 0:
+        plt.plot(x1_line, - (theta_toy[0] * x1_line + theta_0_toy) / theta_toy[1],
+                 color="black", linewidth=3.0, label=f"Fronteira (θ={theta_toy}, θ₀={theta_0_toy:.2f})")
+    
+    # Plota os pontos classificados
+    for i in range(len(toy_labels)):
+        is_correct = (preds_toy[i] == toy_labels[i])
+        if is_correct:
+            color = "dodgerblue" if toy_labels[i] == 1 else "darkorange"
+            marker = "^" if toy_labels[i] == 1 else "s"
+            label_point = "Correto (+1)" if toy_labels[i] == 1 else "Correto (-1)"
+        else:
+            color = "crimson"
+            marker = "X"
+            label_point = "Incorreto (Erro)"
+            
+        plt.scatter(toy_features[i, 0], toy_features[i, 1], 
+                    color=color, marker=marker, s=150, edgecolors='black', zorder=5,
+                    label=label_point)
+    
+    # Remove legendas duplicadas
+    handles, labels_legend = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels_legend, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc="upper right")
+    
+    plt.xlim(-3.0, 3.0)
+    plt.ylim(-3.0, 3.0)
+    plt.title(f"Visualização de Classificação e Acurácia (Acc = {acc_toy:.2%})\nUsando Average Perceptron no Toy Dataset com Outliers", fontsize=11, fontweight='bold')
+    plt.xlabel("x1")
+    plt.ylabel("x2")
+    plt.grid(True, linestyle=":")
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(plots_dir, "classification_accuracy_visualization.png"))
+    plt.close()
+    print("Visualização de classificação e acurácia salva em 'classification_accuracy_visualization.png' com sucesso!")

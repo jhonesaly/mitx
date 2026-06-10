@@ -484,9 +484,9 @@ Agora, realize os seguintes passos para obter o desempenho inicial:
 
 Informe os resultados obtidos nos campos abaixo:
 
-- **Acurácia de validação do Perceptron**: `[____]`
-- **Acurácia de validação do Perceptron Médio**: `[____]`
-- **Acurácia de validação do Pegasos**: `[____]`
+- **Acurácia de validação do Perceptron**: `0.7160`
+- **Acurácia de validação do Perceptron Médio**: `0.7980`
+- **Acurácia de validação do Pegasos**: `0.7900`
 
 # 8. Ajuste de Parâmetros
 
