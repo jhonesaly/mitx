@@ -257,3 +257,76 @@ if __name__ == '__main__':
         for idx, word in enumerate(explanatory_words[:10]):
             print(f"{idx+1}. Top {idx+1}: {word}")
 
+        #-------------------------------------------------------------------------------
+        # Problem 9: Engenharia de Características
+        #-------------------------------------------------------------------------------
+        print("\n--- Executando Problem 9 (Engenharia de Características) ---")
+        
+        # 1. Remoção de Stop Words
+        dictionary_stop = p1.bag_of_words(train_texts, remove_stopword=True)
+        train_stop_features = p1.extract_bow_feature_vectors(train_texts, dictionary_stop, binarize=True)
+        test_stop_features = p1.extract_bow_feature_vectors(test_texts, dictionary_stop, binarize=True)
+        
+        theta_stop, theta_0_stop = p1.pegasos(train_stop_features, train_labels, T=25, L=0.01)
+        preds_stop = p1.classify(test_stop_features, theta_stop, theta_0_stop)
+        acc_stop = p1.accuracy(preds_stop, test_labels)
+        print(f"Acurácia no conjunto de teste (Stop Words Removidas - Binário): {acc_stop:.4f}")
+        
+        # 2. Características de Contagem (Não-binário)
+        train_count_features = p1.extract_bow_feature_vectors(train_texts, dictionary_stop, binarize=False)
+        test_count_features = p1.extract_bow_feature_vectors(test_texts, dictionary_stop, binarize=False)
+        
+        theta_count, theta_0_count = p1.pegasos(train_count_features, train_labels, T=25, L=0.01)
+        preds_count = p1.classify(test_count_features, theta_count, theta_0_count)
+        acc_count = p1.accuracy(preds_count, test_labels)
+        print(f"Acurácia no conjunto de teste (Stop Words Removidas - Contagens): {acc_count:.4f}")
+
+        # 3. Visualização do Espaço Vetorial BoW usando PCA
+        print("\n--- Gerando projeção 2D do espaço vetorial BoW (PCA) ---")
+        try:
+            from sklearn.decomposition import PCA
+            import matplotlib.pyplot as plt
+            
+            # Executa a redução de dimensionalidade nas primeiras 500 reviews de treino
+            pca = PCA(n_components=2)
+            features_2d = pca.fit_transform(train_bow_features[:500])
+            labels_subset = np.array(train_labels[:500])
+            
+            plt.figure(figsize=(9, 7))
+            colors = ['dodgerblue' if l == 1 else 'darkorange' for l in labels_subset]
+            markers = ['^' if l == 1 else 's' for l in labels_subset]
+            
+            for i in range(len(labels_subset)):
+                plt.scatter(features_2d[i, 0], features_2d[i, 1], 
+                            color=colors[i], marker=markers[i], alpha=0.75, edgecolors='black', s=60)
+            
+            plt.title("Projeção 2D (PCA) do Espaço Vetorial Bag of Words\n(Amostra de 500 reviews de treino)", fontsize=12, fontweight='bold', pad=15)
+            plt.xlabel("Componente Principal 1", fontsize=10)
+            plt.ylabel("Componente Principal 2", fontsize=10)
+            plt.grid(True, linestyle='--', alpha=0.5)
+            
+            # Legenda personalizada
+            from matplotlib.lines import Line2D
+            legend_elements = [
+                Line2D([0], [0], marker='^', color='w', markerfacecolor='dodgerblue', markeredgecolor='black', markersize=10, label='Positiva (+1)'),
+                Line2D([0], [0], marker='s', color='w', markerfacecolor='darkorange', markeredgecolor='black', markersize=10, label='Negativa (-1)')
+            ]
+            plt.legend(handles=legend_elements, loc='best')
+            plt.tight_layout()
+            
+            filepath = os.path.join('plots', 'bow_space_projection.png')
+            plt.savefig(filepath, dpi=150)
+            plt.close()
+            print(f"Projeção do espaço vetorial salva em '{filepath}'")
+            
+            # Copia para a pasta de artefatos da conversa atual
+            if os.path.exists(ARTIFACT_DIR):
+                try:
+                    import shutil
+                    shutil.copy(filepath, os.path.join(ARTIFACT_DIR, 'bow_space_projection.png'))
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"Erro ao gerar a projeção PCA: {e}")
+
+

@@ -595,7 +595,7 @@ $T = 25$ e $L = 0.01$ quando você remove as palavras do
 > stop words sejam adicionadas ao dicionário.
 
 - **Acurácia no conjunto de teste usando o dicionário original**: $0.8020$
-- **Acurácia no conjunto de teste usando o dicionário com stop words removidas**: `[____]`
+- **Acurácia no conjunto de teste usando o dicionário com stop words removidas**: `0.8080`
 
 ---
 
@@ -611,7 +611,7 @@ um indicador binário (0 ou 1).
 > [project1.py](sentiment_analysis/project1.py) para computar características de
 > contagem.
 
-- **Acurácia no conjunto de teste usando o dicionário com stop words removidas e características de contagem**: `[____]`
+- **Acurácia no conjunto de teste usando o dicionário com stop words removidas e características de contagem**: `0.7700`
 
 *Tente comparar seu resultado com o do problema anterior e veja a discussão da
 solução após responder à pergunta.*
