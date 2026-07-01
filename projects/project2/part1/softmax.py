@@ -50,8 +50,19 @@ def compute_cost_function(X, Y, theta, lambda_factor, temp_parameter):
     Returns
         c - the cost value (scalar)
     """
-    #YOUR CODE HERE
-    raise NotImplementedError
+    n = X.shape[0]
+    
+    # Calcula as probabilidades usando a função da etapa anterior
+    H = compute_probabilities(X, theta, temp_parameter)
+    
+    # Termo de erro (Cross-Entropy)
+    loss = -(1.0 / n) * np.sum(np.log(H[Y, np.arange(n)]))
+    
+    # Termo de regularização L2
+    reg = (lambda_factor / 2.0) * np.sum(theta ** 2)
+    
+    # Custo total
+    return loss + reg
 
 def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_parameter):
     """
