@@ -81,8 +81,23 @@ def run_gradient_descent_iteration(X, Y, theta, alpha, lambda_factor, temp_param
     Returns:
         theta - (k, d) NumPy array that is the final value of parameters theta
     """
-    #YOUR CODE HERE
-    raise NotImplementedError
+    n = X.shape[0]
+    k = theta.shape[0]
+    
+    # Calcula as probabilidades P de formato (k, n)
+    P = compute_probabilities(X, theta, temp_parameter)
+    
+    # Cria a matriz indicadora M (one-hot encoding) usando matriz esparsa para eficiência
+    data = np.ones(n)
+    M = sparse.coo_matrix((data, (Y, np.arange(n))), shape=(k, n)).toarray()
+    
+    # Calcula o gradiente vetorizado
+    grad = -(1.0 / (temp_parameter * n)) * np.dot((M - P), X) + (lambda_factor * theta)
+    
+    # Atualiza e retorna os parâmetros theta
+    theta_updated = theta - alpha * grad
+    
+    return theta_updated
 
 def update_y(train_y, test_y):
     """
