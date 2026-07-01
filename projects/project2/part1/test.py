@@ -1,16 +1,19 @@
 import os
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import sys
+sys.path.append("..")
+
 import time
 import traceback
 import numpy as np
+import utils
 import linear_regression
 import svm
 import softmax
 import features
 import kernel
-
-sys.path.append("..")
-import utils
 
 verbose = False
 

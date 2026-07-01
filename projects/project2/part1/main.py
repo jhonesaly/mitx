@@ -1,3 +1,7 @@
+import os
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +20,7 @@ from kernel import *
 # Load MNIST data:
 train_x, train_y, test_x, test_y = get_MNIST_data()
 # Plot the first 20 images of the training set.
-plot_images(train_x[0:20, :])
+#plot_images(train_x[0:20, :])
 
 #######################################################################
 # 2. Linear Regression with Closed Form Solution
@@ -26,23 +30,24 @@ plot_images(train_x[0:20, :])
 
 
 def run_linear_regression_on_MNIST(lambda_factor=1):
-    """
-    Trains linear regression, classifies test data, computes test error on test set
-
-    Returns:
-        Final test error
-    """
+    print(f"\n--- Iniciando regressão para lambda={lambda_factor} ---")
     train_x, train_y, test_x, test_y = get_MNIST_data()
+    
     train_x_bias = np.hstack([np.ones([train_x.shape[0], 1]), train_x])
     test_x_bias = np.hstack([np.ones([test_x.shape[0], 1]), test_x])
+    
+    print("Calculando forma fechada (isso pode demorar alguns minutos)...")
     theta = closed_form(train_x_bias, train_y, lambda_factor)
+    
+    print("Calculando erro de teste...")
     test_error = compute_test_error_linear(test_x_bias, test_y, theta)
     return test_error
 
 
 # Don't run this until the relevant functions in linear_regression.py have been fully implemented.
-print('Linear Regression test_error =', run_linear_regression_on_MNIST(lambda_factor=1))
-
+print('Linear Regression test_error lambda=1 =', run_linear_regression_on_MNIST(lambda_factor=1))
+print('Linear Regression test_error lambda=0.1 =', run_linear_regression_on_MNIST(lambda_factor=0.1))
+print('Linear Regression test_error lambda=0.01 =', run_linear_regression_on_MNIST(lambda_factor=0.01))
 
 #######################################################################
 # 3. Support Vector Machine
@@ -199,3 +204,6 @@ test_cube = cubic_features(test_pca10)
 
 # TODO: Train your softmax regression model using (train_cube, train_y)
 #       and evaluate its accuracy on (test_cube, test_y).
+
+if __name__ == "__main__":
+    print("ainda estou aqui.")
