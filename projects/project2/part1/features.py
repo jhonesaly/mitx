@@ -16,7 +16,15 @@ def project_onto_PC(X, pcs, n_components, feature_means):
     #       of the eigenvectors returned by principal_components().
     #       Note that each eigenvector is already be a unit-vector,
     #       so the projection may be done using matrix multiplication.
-    raise NotImplementedError
+
+    # Centraliza os dados usando a média fornecida
+    X_centered = X - feature_means
+    
+    # Seleciona as primeiras 'n_components' colunas (os top k autovetores)
+    V = pcs[:, :n_components]
+    
+    # Projeta os dados através da multiplicação de matrizes
+    return np.dot(X_centered, V)
 
 
 ### Functions which are already complete, for you to use ###
@@ -115,7 +123,7 @@ def principal_components(centered_data):
         the largest eigenvalue
     """
     scatter_matrix = np.dot(centered_data.transpose(), centered_data)
-    eigen_values, eigen_vectors = np.linalg.eig(scatter_matrix)
+    eigen_values, eigen_vectors = np.linalg.eigh(scatter_matrix)
     # Re-order eigenvectors by eigenvalue magnitude:
     idx = eigen_values.argsort()[::-1]
     eigen_values = eigen_values[idx]
