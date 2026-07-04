@@ -81,16 +81,14 @@ class NeuralNetwork():
         self.hidden_to_output_weights -= self.learning_rate * hidden_to_output_weight_gradients
 
     def predict(self, x1, x2):
-
         input_values = np.matrix([[x1],[x2]])
-
-        # Compute output for a single input(should be same as the forward propagation in training)
+        
         hidden_layer_weighted_input = self.input_to_hidden_weights * input_values + self.biases
         hidden_layer_activation = np.vectorize(rectified_linear_unit)(hidden_layer_weighted_input)
-
+        
         output = self.hidden_to_output_weights * hidden_layer_activation
-        activated_output = np.vectorize(rectified_linear_unit)(output)
-
+        activated_output = output_layer_activation(output)
+        
         return activated_output.item()
 
     # Run this to train your neural network once you complete the train method
