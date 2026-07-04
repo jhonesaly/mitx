@@ -16,15 +16,34 @@ img_rows, img_cols = 42, 28 # input image dimensions
 
 
 class CNN(nn.Module):
-
     def __init__(self, input_dimension):
         super(CNN, self).__init__()
-        # TODO initialize model layers here
+        self.flatten = Flatten()
+        self.conv1 = nn.Conv2d(1, 32, (3, 3))
+        self.pool1 = nn.MaxPool2d((2, 2))
+        self.conv2 = nn.Conv2d(32, 64, (3, 3))
+        self.pool2 = nn.MaxPool2d((2, 2))
+        
+        # O valor do input_features dependerá do tamanho da imagem multi-digit
+        # (ex: 1600 se a imagem for 28x28, ou outro valor após o MaxPool).
+        self.fc_hidden = nn.Linear(1600, 128) 
+        self.dropout = nn.Dropout(0.5)
+        
+        self.out_digit1 = nn.Linear(128, 10)
+        self.out_digit2 = nn.Linear(128, 10)
 
     def forward(self, x):
-
-        # TODO use model layers to predict the two digits
-
+        x = F.relu(self.conv1(x))
+        x = self.pool1(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool2(x)
+        x = self.flatten(x)
+        
+        x = F.relu(self.fc_hidden(x))
+        x = self.dropout(x)
+        
+        out_first_digit = self.out_digit1(x)
+        out_second_digit = self.out_digit2(x)
         return out_first_digit, out_second_digit
 
 def main():
