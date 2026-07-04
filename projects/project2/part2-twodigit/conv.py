@@ -23,20 +23,18 @@ class CNN(nn.Module):
         self.pool1 = nn.MaxPool2d((2, 2))
         self.conv2 = nn.Conv2d(32, 64, (3, 3))
         self.pool2 = nn.MaxPool2d((2, 2))
+        self.conv3 = nn.Conv2d(64, 128, (3, 3))
         
-        # O valor do input_features dependerá do tamanho da imagem multi-digit
-        # (ex: 1600 se a imagem for 28x28, ou outro valor após o MaxPool).
-        self.fc_hidden = nn.Linear(1600, 128) 
-        self.dropout = nn.Dropout(0.5)
+        self.fc_hidden = nn.Linear(2688, 256) 
+        self.dropout = nn.Dropout(0.3)
         
-        self.out_digit1 = nn.Linear(128, 10)
-        self.out_digit2 = nn.Linear(128, 10)
+        self.out_digit1 = nn.Linear(256, 10)
+        self.out_digit2 = nn.Linear(256, 10)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = self.pool1(x)
-        x = F.relu(self.conv2(x))
-        x = self.pool2(x)
+        x = self.pool1(F.relu(self.conv1(x)))
+        x = self.pool2(F.relu(self.conv2(x)))
+        x = F.relu(self.conv3(x))
         x = self.flatten(x)
         
         x = F.relu(self.fc_hidden(x))
@@ -71,7 +69,7 @@ def main():
     model = CNN(input_dimension) # TODO add proper layers to CNN class above
 
     # Train
-    train_model(train_batches, dev_batches, model)
+    train_model(train_batches, dev_batches, model, lr=0.001, optimizer_type='Adam')
 
     ## Evaluate the model on test data
     loss, acc = run_epoch(test_batches, model.eval(), None)

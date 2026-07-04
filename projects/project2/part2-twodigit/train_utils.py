@@ -35,10 +35,14 @@ def compute_accuracy(predictions, y):
     return np.mean(np.equal(predictions.numpy(), y.numpy()))
 
 
-def train_model(train_data, dev_data, model, lr=0.01, momentum=0.9, nesterov=False, n_epochs=30):
+def train_model(train_data, dev_data, model, lr=0.01, momentum=0.9, nesterov=False, n_epochs=30, optimizer_type='SGD'):
     """Train a model for N epochs given data and hyper-params."""
-    # We optimize with SGD
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=nesterov)
+    if optimizer_type == 'SGD':
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=nesterov)
+    elif optimizer_type == 'Adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
+    else:
+        raise ValueError("Unknown optimizer type")
 
     for epoch in range(1, n_epochs + 1):
         print("-------------\nEpoch {}:\n".format(epoch))
