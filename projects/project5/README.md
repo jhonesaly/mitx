@@ -110,3 +110,136 @@ Assume that the reward function $R(s, a, b)$ is given in Table 1. At the beginni
 $$V^*(h_0) = \mathbb{E} \left[ \sum_{t=0}^{\infty} \gamma^t R(h_t, a_t, b_t) \mid h_0, \pi^* \right]$$
 
 Please compute the expected optimal reward for each episode $\mathbb{E} [V^*(h_0)]$. Note that the initial state $h_0$ is uniformly distributed in the state space $H = (r, q) : 0 \le r \le 3, 0 \le q \le 3$. In other words, there are four quests each mapping to a unique room. Assume that the discounted factor is $\gamma = 0.5$.
+
+**Resposta**: `0.55375`
+
+## 4. Tabular Q-learning for Home World game
+
+In this section you will evaluate the tabular Q-learning algorithms for the *Home world* game. Recall that the state observable to the player is described in text. Therefore we have to choose a mechanism that maps text descriptions into vector representations.
+
+In this section you will consider a simple approach that assigns a unique index for each text description. In particular, we will build two dictionaries:
+
+- `dict_room_desc` that takes the room description text as the key and returns a unique scalar index
+- `dict_quest_desc` that takes the quest description text as the key and returns a unique scalar index.
+
+For instance, consider an observable state $s = (s_r, s_q)$, where $s_r$ and $s_q$ are the text descriptions for the current room and the current request, respectively. Then $i_r = \text{dict\_room\_desc}[s_r]$ gives the scalar index for $s_r$ and $i_q = \text{dict\_quest\_desc}[s_q]$ gives the scalar index for $s_q$. That is, the textual state $s = (s_r, s_q)$ is mapped to a tuple $I = (i_r, i_q)$.
+
+Normally, we would build these dictionaries as we train our agent, collecting descriptions and adding them to the list of known descriptions. For the purpose of this project, these dictionaries will be provided to you.
+
+### Evaluating Tabular Q-learning on Home World
+
+The following python files are provided:
+
+- [framework.py](framework.py) contains various functions for the text-based game environment that the staff has implemented for you. Some functions that you can call to train and testing your reinforcement learning algorithms:
+  - `newGame()`
+    - Args: None
+    - Return: A tuple where the first element is a description of the initial room, the second element is a description of the quest for this new game episode, and the last element is a Boolean variable with value *False* implying that the game is not over.
+  - `step_game()`
+    - Args:
+      - `current_room_desc`: A description of the current room
+      - `current_quest_desc`: A description of the current quest state
+      - `action_index`: An integer used to represent the index of the selected action
+      - `object_index`: An integer used to indicate the index of the selected object
+    - Return: the system next state when the selected command is applied at the current state.
+      - `next_room_desc`: The description of the room of the next state
+      - `next_quest_desc`: The description of the next quest
+      - `reward`: A real valued number representing the **one-step** reward obtained at this step
+      - `terminal`: A boolean valued number indicating whether this episode is over (either quest is finished, or the number of steps reaches the maximum number of steps for each episode).
+- [agent_tabular_ql.py](agent_tabular_ql.py) contains various function templates that you will use to implement your learning algorithm.
+
+In this section, you will evaluate your learning algorithm for the Home World game. The metric we use to measure an agent's performance is the cumulative discounted reward obtained per episode averaged over the episodes.
+
+The evaluation procedure is as follows. Each experiment (or run) consists of multiple epochs (the number of epochs is `NUM_EPOCHS`). In each epoch:
+
+1. You first train the agent on `NUM_EPIS_TRAIN` episodes, following an $\epsilon$-greedy policy with $\epsilon =$ `TRAINING_EP` and updating the $Q$ values.
+2. Then, you have a testing phase of running `NUM_EPIS_TEST` episodes of the game, following an $\epsilon$-greedy policy with $\epsilon =$ `TESTING_EP`, which makes the agent choose the best action according to its current Q-values 95% of the time. At the testing phase of each epoch, you will compute the cumulative discounted reward for each episode and then obtain the average reward over the `NUM_EPIS_TEST` episodes.
+
+Finally, at the end of the experiment, you will get a sequence of data (of size `NUM_EPOCHS`) that represents the testing performance at each epoch.
+
+Note that there is randomness in both the training and testing phase. You will run the experiment `NUM_RUNS` times and then compute the averaged reward performance over `NUM_RUNS` experiments.
+
+Most of these operations are handled by the boilerplate code provided in the [agent_tabular_ql.py](agent_tabular_ql.py) file by functions `run`, `run_epoch` and `main`, but you will need to complete the `run_episode` function.
+
+Write a `run_episode` function that takes a boolean argument (whether the episode is a training episode or not) and runs one episode.
+
+```python
+def run_episode(for_training):
+    """ Runs one episode
+    If for training, update Q function
+    If for testing, computes and return cumulative discounted reward
+
+    Args:
+        for_training (bool): True if for training
+
+    Returns:
+        None
+    """
+    epsilon = TRAINING_EP if for_training else TESTING_EP
+
+    epi_reward = 0.0
+    discount_factor = 1.0
+
+    (current_room_desc, current_quest_desc, terminal) = framework.newGame()
+
+    while not terminal:
+        s1 = dict_room_desc[current_room_desc]
+        s2 = dict_quest_desc[current_quest_desc]
+
+        action_index, object_index = epsilon_greedy(s1, s2, q_func, epsilon)
+
+        next_room_desc, next_quest_desc, reward, terminal = framework.step_game(
+            current_room_desc, current_quest_desc, action_index, object_index
+        )
+
+        ns1 = dict_room_desc[next_room_desc]
+        ns2 = dict_quest_desc[next_quest_desc]
+
+        if for_training:
+            tabular_q_learning(q_func, s1, s2, action_index, object_index,
+                               reward, ns1, ns2, terminal)
+
+        if not for_training:
+            epi_reward += discount_factor * reward
+            discount_factor *= GAMMA
+
+        current_room_desc = next_room_desc
+        current_quest_desc = next_quest_desc
+
+    if not for_training:
+        return epi_reward
+```
+
+### Report performance
+
+In your Q-learning algorithm, initialize $Q$ at zero. Set `NUM_RUNS` = 10, `NUM_EPIS_TRAIN` = 25, `NUM_EPIS_TEST` = 50, $\gamma = 0.5$, `TRAINING_EP` = 0.5, `TESTING_EP` = 0.05 and the learning rate $\alpha = 0.1$.
+
+- **Number of epochs when the learning algorithm converges** (testing performance becomes stable):
+  **`20`** (ou **`15`** / **`25`**) — *A curva se estabiliza por volta da época 15~20 ao atingir o patamar de recompensa ~0.52*.
+
+- **Average episodic rewards when it converges**:
+  **`0.52`** ✔️ *(Correto!)*
+
+## 5. Parameter Tuning
+
+### Effects of adjusting epsilon
+
+0 points possible (ungraded)
+
+**Ungrading Note:** The problem is now ungraded because there has been a lot of confusion. In this question, you will investigate the impact of $\epsilon$ on the convergence of Q-learning algorithm. Which of the below do you observe from running the algorithm?
+
+- [x] For very large $\epsilon$ (say $\epsilon = 1$), the algorithm converges slower compared to $\epsilon = 0.5$
+- [ ] For very large $\epsilon$ (say $\epsilon = 1$), the algorithm converges faster compared to $\epsilon = 0.5$
+- [x] For very small $\epsilon$ (say $\epsilon = 0.00001$), the algorithm converges slower compared to $\epsilon = 0.5$
+- [ ] For very small $\epsilon$ (say $\epsilon = 0.00001$), the algorithm converges faster compared to $\epsilon = 0.5$
+
+### Effects of alpha
+
+0 points possible (ungraded)
+
+In this question, you will investigate the impact of $\alpha$ on the convergence of Q-learning algorithm. Fix the exploration parameter $\epsilon = 0.5$ and do the experiments with different values of the training $\alpha \in [10^{-6}, 1]$. What you have observed?
+
+- [ ] The algorithm converges for all values of $\alpha$ in less than 200 epochs
+- [x] The algorithm does not converge for all values of $\alpha$ in less than 200 epochs
+- [x] The smaller $\alpha$, the slower the convergence
+- [ ] The smaller $\alpha$, the faster the convergence
+
