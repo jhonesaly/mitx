@@ -300,4 +300,173 @@ $$\theta \leftarrow \theta + \alpha g(\theta) = \theta + \alpha \left[ R(s, c) +
 
 where $\alpha$ is the learning rate.
 
+## 8. Linear Q-Learning
+
+In this tab, you will implement the Q-learning algorithm with linear function approximation.
+
+Recall the linear approximation we chose:
+
+$$Q(s, c; \theta) = \phi(s, c)^T \theta$$
+
+with
+
+$$\phi(s, c) = \begin{bmatrix} \mathbf{0} \\ \vdots \\ \mathbf{0} \\ \psi_R(s) \\ \mathbf{0} \\ \vdots \\ \mathbf{0} \end{bmatrix}$$
+
+Now, define $\hat{\theta}_i$ for $i$ in range $1, d_C$ so that:
+
+$$\theta = \begin{bmatrix} \hat{\theta}_1 \\ \vdots \\ \hat{\theta}_i \\ \vdots \\ \hat{\theta}_{d_C} \end{bmatrix}$$
+
+With this notation, we get:
+
+$$Q(s, c; \theta) = \psi_R(s)^T \hat{\theta}_c$$
+
+In practice, we can implement $\hat{\theta}$ as a 2D array, so that
+
+$$\begin{bmatrix} Q(s, 1; \theta) \\ \vdots \\ Q(s, d_C; \theta) \end{bmatrix} = \begin{bmatrix} \hat{\theta}_1^T \\ \vdots \\ \hat{\theta}_{d_C}^T \end{bmatrix} \cdot \psi_R(s)$$
+
+### Epsilon-greedy exploration
+
+0 points possible (ungraded)
+
+**Update (May 5):** *This problem is now ungraded while we fix the grader.*
+
+Now you will write a function `epsilon_greedy` that implements the $\epsilon$-greedy exploration policy using the current Q-function.
+
+**Hint:** You can access $Q(s, c; \theta)$ using:
+`q_value = (theta @ state_vector)[tuple2index(action_index, object_index)]`
+
+Available Functions: You have access to the NumPy python library as `np` and functions `tuple2index` and `index2tuple`. Your code should also use constants `NUM_ACTIONS` and `NUM_OBJECTS`.
+
+```python
+def epsilon_greedy(state_vector, theta, epsilon):
+    """Returns an action selected by an epsilon-greedy exploration policy
+
+    Args:
+        state_vector (np.ndarray): extracted vector representation
+        theta (np.ndarray): current weight matrix
+        epsilon (float): the probability of choosing a random command
+
+    Returns:
+        (int, int): the indices describing the action/object to take
+    """
+    if np.random.random() < epsilon:
+        action_index = np.random.randint(NUM_ACTIONS)
+        object_index = np.random.randint(NUM_OBJECTS)
+    else:
+        q_values = theta @ state_vector
+        best_index = np.argmax(q_values)
+        action_index, object_index = index2tuple(best_index)
+
+    return (int(action_index), int(object_index))
+```
+
+### Linear Q-learning
+
+1 point possible (graded)
+
+Write a function `linear_q_learning` that updates the theta weight matrix, given the transition data $(s, a, R(s, a), s')$.
+
+Reminder: You should implement this function locally first. You should test this function along with the next one and make sure you achieve reasonable performance.
+
+**Hint:** You can access $Q(s, a, \theta)$ using:
+`q_value = (theta @ state_vector)[tuple2index(action_index, object_index)]`
+
+Available Functions: You have access to the NumPy python library as `np`. You should also use constants `ALPHA` and `GAMMA` in your code.
+
+```python
+def linear_q_learning(theta, current_state_vector, action_index, object_index,
+                      reward, next_state_vector, terminal):
+    """Update theta for a given transition
+
+    Args:
+        theta (np.ndarray): current weight matrix
+        current_state_vector (np.ndarray): vector representation of current state
+        action_index (int): index of the current action
+        object_index (int): index of the current object
+        reward (float): the immediate reward the agent recieves from playing current command
+        next_state_vector (np.ndarray): vector representation of next state
+        terminal (bool): True if this epsiode is over
+
+    Returns:
+        None
+    """
+    c = tuple2index(action_index, object_index)
+    q_cur = theta[c] @ current_state_vector
+
+    if terminal:
+        max_q_next = 0.0
+    else:
+        q_next = theta @ next_state_vector
+        max_q_next = np.max(q_next)
+
+    y = reward + GAMMA * max_q_next
+    theta[c] += ALPHA * (y - q_cur) * current_state_vector
+```
+
+### Evaluate linear Q-learning on Home World game
+
+1 point possible (graded)
+
+Adapt your `run_episode` function to call `linear_q_learning` and evaluate your performance using hyperparameters:
+
+Set `NUM_RUNS` = 5, `NUM_EPIS_TRAIN` = 25, `NUM_EPIS_TEST` = 50, $\gamma = 0.5$, `TRAINING_EP` = 0.5, `TESTING_EP` = 0.05 and the learning rate $\alpha = 0.01$.
+
+Please enter the *average episodic rewards* of your Q-learning algorithm when it converges.
+
+**Resposta**: `0.38` *(ou entre `0.35` e `0.40`)*
+
+## 9. Deep Q-network
+
+As you have observed in the previous tab, a linear model is not able to correctly approximate the Q-function for our simple task.
+
+In this section, you will approximate $Q(s, c)$ with a neural network. You will be provided with a DQN that takes the state representation (bag-of-words) and outputs the predicted Q values for the different "actions" and "objects".
+
+### Deep Q network
+
+1 point possible (graded)
+
+Complete the function `deep_q_learning` that updates the model weights, given the transition data $(s, c, R(s, c), s')$.
+
+```python
+def deep_q_learning(current_state_vector, action_index, object_index, reward,
+                    next_state_vector, terminal):
+    """Updates the weights of the DQN for a given transition
+
+    Args:
+        current_state_vector (torch.FloatTensor): vector representation of current state
+        action_index (int): index of the current action
+        object_index (int): index of the current object
+        reward (float): the immediate reward the agent recieves from playing current command
+        next_state_vector (torch.FloatTensor): vector representation of next state
+        terminal (bool): True if this epsiode is over
+
+    Returns:
+        None
+    """
+    with torch.no_grad():
+        q_values_action_next, q_values_object_next = model(next_state_vector)
+    maxq_next = 1 / 2 * (q_values_action_next.max()
+                         + q_values_object_next.max())
+
+    if terminal:
+        y = reward
+    else:
+        y = reward + GAMMA * maxq_next.item()
+
+    q_values_action_cur, q_values_object_cur = model(current_state_vector)
+    q_value_cur_state = 1 / 2 * (q_values_action_cur[action_index]
+                                 + q_values_object_cur[object_index])
+
+    loss = 1 / 2 * (q_value_cur_state - y)**2
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+```
+
+Please enter the *average episodic rewards* of your Q-learning algorithm when it converges.
+
+**Resposta**: `0.52` *(ou entre `0.51` e `0.53`)*
+
+
 
