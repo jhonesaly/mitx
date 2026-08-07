@@ -54,10 +54,10 @@ Try $K \in \{1, 2, 3, 4\}$ on this data, plotting each solution using our `commo
 
 Report the lowest cost for each $K$:
 
-- $\text{Cost}\big|_{K=1} =$ [          ]
-- $\text{Cost}\big|_{K=2} =$ [          ]
-- $\text{Cost}\big|_{K=3} =$ [          ]
-- $\text{Cost}\big|_{K=4} =$ [          ]
+- $\text{Cost}\big|_{K=1} =$ `5462.2975`
+- $\text{Cost}\big|_{K=2} =$ `1684.9080`
+- $\text{Cost}\big|_{K=3} =$ `1329.5949`
+- $\text{Cost}\big|_{K=4} =$ `1035.4998`
 
 ---
 
@@ -188,10 +188,10 @@ Generate analogous plots to K-means using your EM implementation. Note that the 
 
 Report the maximum likelihood for each $K$ using seeds $0, 1, 2, 3, 4$:
 
-- $\text{Log-likelihood}\big|_{K=1} =$ [          ]
-- $\text{Log-likelihood}\big|_{K=2} =$ [          ]
-- $\text{Log-likelihood}\big|_{K=3} =$ [          ]
-- $\text{Log-likelihood}\big|_{K=4} =$ [          ]
+- $\text{Log-likelihood}\big|_{K=1} =$ `-1307.2234`
+- $\text{Log-likelihood}\big|_{K=2} =$ `-1175.7146`
+- $\text{Log-likelihood}\big|_{K=3} =$ `-1138.8909`
+- $\text{Log-likelihood}\big|_{K=4} =$ `-1138.6012`
 
 ---
 
@@ -210,10 +210,10 @@ Now, write a descriptive paragraph of your observations as if it were part of a 
 
 **Note:** We have increased the attempt by 1.
 
-- [ ] In the case $K=1$, the mixture parameters and point assignments are the same for both methods
-- [ ] In the case $K=2$, both methods have similar parameters and point assignments
+- [x] In the case $K=1$, the mixture parameters and point assignments are the same for both methods
+- [x] In the case $K=2$, both methods have similar parameters and point assignments
 - [ ] In the case $K=3$, the k-means solution accounts for point density better than EM
-- [ ] In the case $K=4$, the k-means solution equally spaces the clusters to minimize distortion cost
+- [x] In the case $K=4$, the k-means solution equally spaces the clusters to minimize distortion cost
 
 ---
 
@@ -264,8 +264,8 @@ def bic(X: np.ndarray, mixture: GaussianMixture,
 
 Find the best $K$ from $\{1, 2, 3, 4\}$ on the toy dataset. This will be the $K$ that produces the optimal BIC score. Report the best $K$ and the corresponding BIC score. Measure the BIC on EM models, only. Does the criterion select the correct number of clusters for the toy data?
 
-- $\text{Best K} =$ [          ]
-- $\text{Best BIC} =$ [          ]
+- $\text{Best K} =$ `3`
+- $\text{Best BIC} =$ `-1169.2589`
 
 ---
 
@@ -483,8 +483,8 @@ This may take on the order of a couple minutes for $K = 12$.
 
 Report the maximum likelihood for each $K$ using seeds $0, 1, 2, 3, 4$:
 
-- $\text{Log-likelihood}\big|_{K=1} =$ [          ]
-- $\text{Log-likelihood}\big|_{K=12} =$ [          ]
+- $\text{Log-likelihood}\big|_{K=1} =$ `-1521060.9540`
+- $\text{Log-likelihood}\big|_{K=12} =$ `-1390234.4223`
 
 ---
 
@@ -520,4 +520,4 @@ def fill_matrix(X: np.ndarray, mixture: GaussianMixture) -> np.ndarray:
 
 Test the accuracy of your predictions against actual target values by loading the complete matrix `X_gold = np.loadtxt('netflix_complete.txt')` and measuring the root mean squared error between the two matrices using `common.rmse(X_gold, X_pred)`. Use your best mixture for $K = 12$ from the first question of this tab to generate the results.
 
-- $\text{RMSE} =$ [          ]
+- $\text{RMSE} =$ `0.4805`
